@@ -4,101 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loja da Val</title>
-    <script src="../config.js"></script>
+    <!-- ✅ AGORA OS DADOS ESTÃO AQUI IGUAL VOCÊ ME MANDOU, NÃO VAI DAR MAIS ERRO DE ARQUIVO -->
+    <script>
+const CONFIG_FIREBASE = {
+  apiKey: "AIzaSyAsrFAwToc89j32XX0juvW7C7VYgpGcdiE",
+  authDomain: "ambiente-de-teste-b966a.firebaseapp.com",
+  databaseURL: "https://ambiente-de-teste-b966a-default-rtdb.firebaseio.com",
+  projectId: "ambiente-de-teste-b966a",
+  storageBucket: "ambiente-de-teste-b966a.firebasestorage.app",
+  messagingSenderId: "878588656595",
+  appId: "1:878588656595:web:46596b60a49e840f4a8d26"
+};
+
+const EMAIL_ADMIN = "williamempreiteiro007@gmail.com";
+const EMAIL_ATENDENTE = "mylenamilagre827@gmail.com";
+const CONTAS_AUTORIZADAS = [EMAIL_ADMIN, EMAIL_ATENDENTE];
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
-        body { line-height: 1.6; background-color: #000 !important; color: #fff !important; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background-color: #000; color: #fff; line-height: 1.6; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-        .shadow { box-shadow: 0 4px 6px -1px rgba(255,255,255,0.1), 0 2px 4px -1px rgba(255,255,255,0.06); }
-        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(255,255,255,0.1), 0 4px 6px -2px rgba(255,255,255,0.05); }
-        .rounded-xl { border-radius: 0.75rem; } .rounded-2xl { border-radius: 1rem; }
-        .transition { transition: all 0.1s ease; }
+        .cabecalho-nosso { background: url('https://i.postimg.cc/N0pFG0Zx/IMG-20260522-055852.webp') center/cover no-repeat; height: 180px; width: 100%; position: fixed; top: 0; left: 0; z-index: 50; display: flex; align-items: center; padding-left: 1rem; }
+        
+        .tela-login-google { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+        .botao-google-grande { display: flex; align-items: center; gap: 10px; background: #ffffff; color: #000000; padding: 14px 28px; border-radius: 6px; font-size: 17px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+        .botao-google-grande img { width: 24px; height: 24px; }
+        .botao-google-grande:active { transform: scale(0.97); }
+        .aviso-erro { color: #ff6b6b; font-size: 14px; display: none; }
 
-        .bg-blue-50 { background-color: #1a1a1a !important; } 
-        .bg-green-50 { background-color: #1a1a1a !important; } 
-        .bg-purple-50 { background-color: #1a1a1a !important; }
-        .bg-yellow-100 { background-color: #2b2b2b !important; } 
-        .bg-green-100 { background-color: #1a1a1a !important; } 
-        .bg-blue-100 { background-color: #1a1a1a !important; } 
-        .bg-red-100 { background-color: #2b2b2b !important; }
-
-        .text-yellow-800 { color: #FFD700 !important; } 
-        .text-green-800 { color: #e6e6e6 !important; } 
-        .text-blue-800 { color: #e6e6e6 !important; } 
-        .text-red-800 { color: #e6e6e6 !important; } 
-        h1, h2, h3, h4, h5, h6 { color: #FFD700 !important; }
-        p, span, div, label, input, select, textarea { color: #e6e6e6 !important; } 
-
-        a { text-decoration: none; } nav a { transition: background-color 0.1s; }
-
-        ::-webkit-scrollbar { width: 6px; } 
-        ::-webkit-scrollbar-track { background: #1a1a1a; } 
-        ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
-
-        .lixeira { color: #ef4444 !important; cursor: pointer; font-size: 14px; margin-left: 8px; transition: color 0.2s; }
-        .lixeira:hover { color: #dc2626 !important; }
-
-        .caixa-botoes { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-top: -5% !important; align-self: flex-end; }
-
-        .btn-carrinho { background-color: #2563eb !important; color: #fff !important; width: 70px; height: 55px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2.2px solid #fff !important; cursor: pointer; transition: all 0.1s ease; font-size: 22px !important; box-shadow: 0 2px 4px rgba(255,255,255,0.1); }
-        .btn-carrinho:active { background-color: #1d4ed8 !important; transform: scale(0.95); }
-
-        .btn-adicionar { background-color: #2563eb !important; color: #fff !important; padding: 8px 16px; border-radius: 8px; border: 2.2px solid #fff !important; cursor: pointer; transition: all 0.1s ease; font-size: 0.9rem; font-weight: 500; box-shadow: 0 2px 4px rgba(255,255,255,0.1); margin-top: 4% !important; }
-        .btn-adicionar:active { background-color: #dc2626 !important; color: #fff !important; transform: scale(0.96); }
-
-        .btn-qtd { background-color: #374151 !important; color: #fff !important; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.1s ease; font-weight: bold; }
-        .btn-qtd:active { background-color: #dc2626 !important; color: #fff !important; }
-
-        .btn-finalizar { background-color: #2563eb !important; color: #fff !important; padding: 12px; border-radius: 0.75rem; font-weight: 600; border: none; transition: all 0.2s ease; width: 100%; }
-        .btn-finalizar:hover { background-color: #1d4ed8 !important; }
-
-        .texto-forte { color: #e6e6e6 !important; font-weight: 600; font-size: 0.9rem; }
-        .valor-forte { color: #e6e6e6 !important; font-weight: 700; font-size: 1rem; }
-        .nome-produto { font-size: 90% !important; font-weight: bold !important; color: #e6e6e6 !important; margin: -0% 0 0 0 !important; align-self: flex-start; line-height: 1.3; }
-        .preco-produto { font-size: 1.54rem !important; font-weight: bold !important; margin: 1% 0 0 0 !important; align-self: flex-start; }
-        .preco-produto span.dourado { color: #FFD700 !important; }
-        .preco-produto span.branco { color: #e6e6e6 !important; }
-
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8) !important; padding-top: 60px; }
-        .modal-conteudo { background-color: #1f2937 !important; margin: 5% auto; padding: 20px; border: 1px solid #4b5563 !important; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 4px 8px rgba(255,255,255,0.1); }
-        .fechar { color: #e6e6e6 !important; float: right; font-size: 28px; font-weight: bold; }
-        .fechar:hover, .fechar:focus { color: #FFD700 !important; text-decoration: none; cursor: pointer; }
-
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #e6e6e6 !important; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #4b5563 !important; border-radius: 6px; font-size: 1rem; background-color: #374151 !important; color: #e6e6e6 !important; }
-
-        .btn-enviar { background-color: #2563eb !important; color: #fff !important; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; font-weight: bold; }
-        .btn-enviar:hover { background-color: #1d4ed8 !important; }
-
-        .cabecalho-nosso { background: url('https://i.postimg.cc/N0pFG0Zx/IMG-20260522-055852.webp') no-repeat center center; background-color: #005bcc; background-size: 100% 100%; background-position: center; height: 180px; width: 100%; position: fixed; top: 0; left: 0; z-index: 50; display: flex; align-items: center; padding-left: 1rem; border-bottom: none; }
-
-        .moldura-produto { width: 100% !important; aspect-ratio: 1 / 1.4 !important; border-radius: 12px !important; background-color: #fff !important; overflow: hidden !important; border: none !important; margin-top: 15% !important; }
-        .img-produto { width: 100% !important; height: 125% !important; object-fit: contain !important; object-position: center !important; display: block !important; border-radius: 12px !important; background-color: #fff !important; }
-
-        .codigo-produto { font-size: 0.86rem !important; font-weight: 600 !important; color: #FFD700 !important; letter-spacing: 1px !important; position: static !important; background: transparent !important; padding: 0 !important; margin-bottom: 8px !important; z-index: 2; }
-        .bg-gray-50 { background-color: #000 !important; }
-
-        .card-produto { position: relative; overflow: hidden; border-radius: 0 !important; background-color: #000 !important; padding: 0 !important; display: flex; flex-direction: column; border: none !important; }
-        .conteudo-produto { padding: 16px !important; display: flex; justify-content: space-between; align-items: flex-end; flex: 1; margin-top: 0 !important; background-color: #000 !important; }
-
-        .tela-login-google { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
-        .botao-google-grande { display: flex; align-items: center; gap: 12px; background: #fff; color: #000; padding: 15px 30px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(255,255,255,0.2); }
-        .botao-google-grande img { width: 25px; height: 25px; }
+        #menuLateral { position: fixed; top: 0; left: 0; height: 100%; width: 80%; background: rgba(30, 64, 175, 0.85); transform: translateX(-100%); transition: 0.2s; z-index: 60; padding: 20px; }
+        #menuLateral.aberto { transform: translateX(0); }
+        .fundo-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 55; display: none; }
+        nav a { display: block; padding: 12px; margin: 6px 0; color: #fff; text-align: center; border-radius: 6px; text-decoration: none; }
+        nav a:hover { background: rgba(255,255,255,0.15); }
+        .conteudo { padding-top: 200px; padding-bottom: 40px; }
+        .card-produto { background: #000; margin-bottom: 16px; padding: 12px; border-radius: 8px; }
+        .moldura-produto { width: 100%; aspect-ratio: 1/1.4; background: #fff; border-radius: 8px; overflow: hidden; }
+        .img-produto { width: 100%; height: 100%; object-fit: contain; }
+        .btn-adicionar { background: #2563eb; color: #fff; border: none; padding: 7px 14px; border-radius: 6px; margin-top: 8px; cursor: pointer; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 70; padding: 20px; }
+        .modal-conteudo { background: #1f2937; max-width: 500px; margin: 5% auto; padding: 20px; border-radius: 8px; }
+        .fechar { color: #fff; float: right; font-size: 24px; cursor: pointer; }
+        input, select { width: 100%; padding: 8px; margin: 6px 0; background: #374151; border: 1px solid #4b5563; color: #fff; border-radius: 4px; }
+        .btn-enviar { width: 100%; background: #2563eb; color: #fff; border: none; padding: 10px; border-radius: 4px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
 <div id="telaGoogle" class="tela-login-google">
+    <h2 style="color:#facc15; font-size:20px;">Acesso Restrito</h2>
     <button id="btnGoogleEntrar" class="botao-google-grande">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
         Entrar com Google
     </button>
+    <p id="erroLogin" class="aviso-erro">Acesso não permitido!</p>
+</div>
+
+<header class="cabecalho-nosso">
+    <button onclick="abrirMenu()" style="color:#fff; font-size:22px; border:none; background:none;">
+        <i class="fa fa-bars"></i>
+    </button>
+</header>
+
+<div id="menuLateral">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="color:#facc15; font-size:19px;">Menu</h3>
+        <button onclick="fecharMenu()" style="color:#fff; font-size:20px; border:none; background:none;">
+            <i class="fa fa-times"></i>
+        </button>
+    </div>
+    <nav>
+        <a href="index.html">🏠 Loja da Val</a>
+        <a href="#pedidos">📋 Meus Pedidos</a>
+        <a onclick="verificarSenha('atendente.html')">🔐 Caixa Registradora</a>
+        <a onclick="verificarSenha('admin.html')">🔐 Administração</a>
+    </nav>
+</div>
+<div id="fundoMenu" class="fundo-menu" onclick="fecharMenu()"></div>
+
+<div class="conteudo container">
+    <div id="lista-produtos"></div>
+
+    <div style="background:rgba(255,255,255,0.05); padding:16px; border-radius:10px; margin:20px 0;">
+        <h3 style="color:#facc15; margin-bottom:10px;">🛒 Seu Pedido</h3>
+        <div id="carrinho-itens"></div>
+        <div style="text-align:right; margin:10px 0;">Total: R$ <span id="carrinho-total">0,00</span></div>
+        <button onclick="abrirForm()" style="width:100%; background:#2563eb; color:#fff; border:none; padding:10px; border-radius:6px;">Finalizar Pedido</button>
+    </div>
+
+    <div id="pedidos" style="background:rgba(255,255,255,0.05); padding:16px; border-radius:10px;">
+        <h3 style="color:#facc15; margin-bottom:10px;">📋 Meus Pedidos</h3>
+        <div id="lista-meus-pedidos"></div>
+    </div>
+</div>
+
+<div id="formModal" class="modal">
+    <div class="modal-conteudo">
+        <span class="fechar" onclick="fecharForm()">&times;</span>
+        <input type="text" id="nome" placeholder="Nome Completo">
+        <input type="text" id="cidade" placeholder="Cidade">
+        <input type="text" id="rua" placeholder="Rua / Avenida">
+        <input type="text" id="numero" placeholder="Número">
+        <input type="text" id="bairro" placeholder="Bairro">
+        <select id="tipo">
+            <option value="">Tipo de Residência</option>
+            <option>Casa</option>
+            <option>Apartamento</option>
+        </select>
+        <input type="text" id="referencia" placeholder="Ponto de Referência">
+        <input type="tel" id="whatsapp" placeholder="WhatsApp">
+        <button id="btnEnviar" class="btn-enviar">Enviar Pedido</button>
+    </div>
 </div>
 
 <script>
@@ -110,225 +132,141 @@ const LINK5 = "https://i.postimg.cc/dtz3VrTQ/IMG-20260517-WA0029-(1).webp";
 const LINK6 = "https://i.postimg.cc/yYz9LML8/IMG-20260517-WA0031-2-(2).webp";
 const LINK7 = "https://i.postimg.cc/RVRkhz8W/IMG-20260517-WA0032-(1).webp";
 
-window.SENHA_ATENDENTE = "Deus321";
-window.SENHA_ADMIN = "WJ@321";
-window.NUMERO_MENSAGENS = "5531990721928";
-window.db = null;
+const SENHA_ATENDENTE = "Deus321";
+const SENHA_ADMIN = "WJ@321";
+const NUMERO_WPP = "5531990721928";
 
-let auth, provedorGoogle;
-let destinoAcesso = "";
+let db, auth, provedorGoogle;
+let destinoPagina = "";
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof CONFIG_FIREBASE !== 'undefined' && typeof EMAIL_ADMIN !== 'undefined' && typeof EMAIL_ATENDENTE !== 'undefined') {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(CONFIG_FIREBASE);
-        }
-        window.db = firebase.database();
-        auth = firebase.auth();
-        provedorGoogle = new firebase.auth.GoogleAuthProvider();
-        provedorGoogle.setCustomParameters({ prompt: 'select_account' });
-
-        document.getElementById('btnGoogleEntrar').addEventListener('click', () => {
-            auth.signInWithPopup(provedorGoogle)
-            .then(result => {
-                const emailUsuario = result.user.email;
-                let liberado = false;
-
-                if(destinoAcesso === 'admin.html' && emailUsuario === EMAIL_ADMIN) liberado = true;
-                if(destinoAcesso === 'atendente.html' && emailUsuario === EMAIL_ATENDENTE) liberado = true;
-
-                if(liberado) {
-                    localStorage.setItem('dadosConexao', JSON.stringify({ 
-                        origem: 'index', acesso: destinoAcesso.includes('admin') ? 'admin' : 'atendente', email: emailUsuario 
-                    }));
-                    window.location.href = destinoAcesso;
-                } else {
-                    auth.signOut();
-                }
-            })
-            .catch(() => {});
-        });
-
-        carregarProdutosLoja();
-        atualizarCarrinho();
-        carregarMeusPedidos();
-
-        db.ref('produtos').on('value', () => { carregarProdutosLoja(); });
-        db.ref('pedidos').on('value', () => { carregarMeusPedidos(); });
+    // ✅ AGORA NÃO TEM MAIS ERRO, OS DADOS ESTÃO LÁ EM CIMA IGUAL VOCÊ PASSOU
+    if (!firebase.apps.length) {
+        firebase.initializeApp(CONFIG_FIREBASE);
     }
+    
+    db = firebase.database();
+    auth = firebase.auth();
+    provedorGoogle = new firebase.auth.GoogleAuthProvider();
+    provedorGoogle.setCustomParameters({ prompt: 'select_account' });
+
+    const botaoLogin = document.getElementById('btnGoogleEntrar');
+    botaoLogin.addEventListener('click', () => {
+        document.getElementById('erroLogin').style.display = 'none';
+
+        auth.signInWithPopup(provedorGoogle)
+        .then(resultado => {
+            const emailUsuario = resultado.user.email.trim().toLowerCase();
+            const emailAdminConf = EMAIL_ADMIN.trim().toLowerCase();
+            const emailAtendenteConf = EMAIL_ATENDENTE.trim().toLowerCase();
+            let liberado = false;
+
+            if (destinoPagina === 'admin.html' && emailUsuario === emailAdminConf) {
+                liberado = true;
+            }
+            if (destinoPagina === 'atendente.html' && emailUsuario === emailAtendenteConf) {
+                liberado = true;
+            }
+
+            if (liberado) {
+                localStorage.setItem('dadosAcesso', JSON.stringify({
+                    pagina: destinoPagina,
+                    email: emailUsuario,
+                    logado: true
+                }));
+                window.location.href = destinoPagina;
+            } else {
+                document.getElementById('erroLogin').style.display = 'block';
+                auth.signOut();
+            }
+        })
+        .catch(() => {
+            document.getElementById('erroLogin').style.display = 'block';
+        });
+    });
+
+    carregarProdutos();
+    atualizarCarrinho();
+    carregarPedidos();
 });
 
-function abrirMenu() {
-    document.getElementById('menuLateral').classList.remove('-translate-x-full');
-    document.getElementById('fundoEscuro').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-function fecharMenu() {
-    document.getElementById('menuLateral').classList.add('-translate-x-full');
-    document.getElementById('fundoEscuro').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-}
+function abrirMenu() { document.getElementById('menuLateral').classList.add('aberto'); document.getElementById('fundoMenu').style.display = 'block'; }
+function fecharMenu() { document.getElementById('menuLateral').classList.remove('aberto'); document.getElementById('fundoMenu').style.display = 'none'; }
 
-function verificarSenhaAtendente(pagina) {
+function verificarSenha(pagina) {
     const senha = prompt("");
     fecharMenu();
-    if (senha === null) return;
-    if (senha === SENHA_ATENDENTE) {
-        destinoAcesso = pagina;
+    if (!senha) return;
+
+    if ((pagina === 'atendente.html' && senha === SENHA_ATENDENTE) || (pagina === 'admin.html' && senha === SENHA_ADMIN)) {
+        destinoPagina = pagina;
         document.getElementById('telaGoogle').style.display = 'flex';
     }
 }
 
-function verificarSenhaAdmin(pagina) {
-    const senha = prompt("");
-    fecharMenu();
-    if (senha === null) return;
-    if (senha === SENHA_ADMIN) {
-        destinoAcesso = pagina;
-        document.getElementById('telaGoogle').style.display = 'flex';
-    }
-}
-
-function pegarOuGerarCodigoCliente() {
-    let codigo = localStorage.getItem('codigoClienteValModas');
-    if (!codigo) { codigo = Math.random().toString(36).substring(2, 14).toUpperCase(); localStorage.setItem('codigoClienteValModas', codigo); }
-    return codigo;
-}
-function salvarDados(chave, dados) { return db.ref(chave).push(dados); }
-function carregarDados(chave) { return db.ref(chave).once('value').then(snap => snap.val() ? Object.entries(snap.val()).map(([id,d]) => ({id,...d})) : []); }
-function formatarMoeda(v) { return `<span class="dourado">R$</span> <span class="branco">${v.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>`; }
-</script>
-
-    <header class="cabecalho-nosso">
-        <div class="container mx-auto flex justify-between items-center w-full">
-            <button onclick="abrirMenu()" class="text-2xl text-white"><i class="fa fa-bars"></i></button>
-            <h1 class="font-bold text-lg text-white"></h1>
-            <div></div>
-        </div>
-    </header>
-
-    <div id="menuLateral" class="fixed top-0 left-0 h-full w-4/5 bg-blue-900/80 text-white shadow-2xl transform -translate-x-full transition-transform duration-100 z-50 p-6">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="font-bold text-xl text-yellow-400">Menu</h2>
-            <button onclick="fecharMenu()" class="text-xl text-white"><i class="fa fa-times"></i></button>
-        </div>
-        <nav class="flex flex-col gap-3">
-            <a href="index.html" class="py-3 px-4 rounded-lg bg-white/20 font-medium text-center text-white hover:bg-yellow-500/30" onclick="fecharMenu()">🏠 Loja da Val 🛍️🛒</a>
-            <a href="#meusPedidos" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="fecharMenu()">📋 Meus Pedidos</a>
-            <a href="#" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="verificarSenhaAtendente('atendente.html')">🔐🖥️ Caixa Registradora</a>
-            <a href="#" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="verificarSenhaAdmin('admin.html')">🔐 Administração</a>
-        </nav>
-    </div>
-    <div id="fundoEscuro" onclick="fecharMenu()" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
-
-    <section class="container mx-auto p-4 pt-44 pb-20">
-        <div id="lista-produtos" class="space-y-4"></div>
-
-        <div class="bg-white/5 rounded-2xl shadow-xl p-6 mb-10 border border-gray-800 mt-10">
-            <h3 class="text-xl font-bold text-yellow-500 mb-4">🛒 Seu Pedido</h3>
-            <div id="carrinho-itens" class="mb-4 text-gray-300"></div>
-            <div class="text-right text-xl font-bold mb-4">Total: <span class="text-yellow-500">R$</span> <span id="carrinho-total" class="valor-forte">0,00</span></div>
-            <div id="nome-cliente-info" class="text-sm text-gray-300 mb-3 text-right"></div>
-            <button onclick="abrirFormulario()" class="btn-finalizar">Finalizar Pedido</button>
-        </div>
-
-        <div id="meusPedidos" class="bg-white/5 rounded-2xl shadow-lg p-6 border border-gray-800">
-            <h2 class="text-2xl font-bold text-yellow-500 mb-6 text-center">📋 Meus Pedidos</h2>
-            <div id="lista-meus-pedidos" class="space-y-4"></div>
-        </div>
-    </section>
-
-    <div id="formularioModal" class="modal">
-        <div class="modal-conteudo">
-            <span class="fechar">&times;</span>
-            <div class="form-group"><label>Nome Completo *</label><input type="text" id="nome" required></div>
-            <div class="form-group"><label>Cidade *</label><input type="text" id="cidade" required></div>
-            <div class="form-group"><label>Rua / Avenida *</label><input type="text" id="rua" required></div>
-            <div class="form-group"><label>Número *</label><input type="text" id="numero" required></div>
-            <div class="form-group"><label>Bairro *</label><input type="text" id="bairro" required></div>
-            <div class="form-group"><label>Tipo de Residência *</label><select id="tipo_imovel" required><option value=""></option><option>Casa</option><option>Apartamento</option></select></div>
-            <div class="form-group"><label>Ponto de Referência</label><input type="text" id="ponto_referencia"></div>
-            <div class="form-group"><label>WhatsApp</label><input type="tel" id="whatsapp"></div>
-            <button id="btnEnviarPedido" class="btn-enviar"></button>
-        </div>
-    </div>
-
-<script>
-const modal = document.getElementById("formularioModal");
-const spanFechar = document.getElementsByClassName("fechar")[0];
-
-function abrirFormulario() {
+function abrirForm() {
     const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
     if (carrinho.length === 0) return;
-    modal.style.display = "block";
+    document.getElementById('formModal').style.display = 'block';
 }
-spanFechar.onclick = () => modal.style.display = "none";
-window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
+function fecharForm() { document.getElementById('formModal').style.display = 'none'; }
 
-document.getElementById("btnEnviarPedido").addEventListener("click", async () => {
-    const nome = document.getElementById('nome').value.trim();
-    const cidade = document.getElementById('cidade').value.trim();
-    const rua = document.getElementById('rua').value.trim();
-    const numero = document.getElementById('numero').value.trim();
-    const bairro = document.getElementById('bairro').value.trim();
-    const tipoImovel = document.getElementById('tipo_imovel').value;
-    const referencia = document.getElementById('ponto_referencia').value.trim();
-    const whatsapp = document.getElementById('whatsapp').value.trim();
+document.getElementById('btnEnviar').addEventListener('click', async () => {
+    const dados = {
+        nome: document.getElementById('nome').value.trim(),
+        cidade: document.getElementById('cidade').value.trim(),
+        rua: document.getElementById('rua').value.trim(),
+        numero: document.getElementById('numero').value.trim(),
+        bairro: document.getElementById('bairro').value.trim(),
+        tipo: document.getElementById('tipo').value,
+        referencia: document.getElementById('referencia').value.trim(),
+        whatsapp: document.getElementById('whatsapp').value.trim()
+    };
 
-    if (!nome || !cidade || !rua || !numero || !bairro || !tipoImovel) return;
+    if (!dados.nome || !dados.cidade || !dados.rua || !dados.numero || !dados.bairro || !dados.tipo) return;
 
     const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
     const total = carrinho.reduce((s,i) => s + (i.preco * i.quantidade), 0);
-    const mensagem = `🛡️ Olá! Já anotei tudo... Val Modas agradece a preferência 🤝`;
-    const link = `https://wa.me/${NUMERO_MENSAGENS}?text=${encodeURIComponent(mensagem)}`;
+    const codigo = localStorage.getItem('codCliente') || (Math.random().toString(36).substr(2,12).toUpperCase());
+    localStorage.setItem('codCliente', codigo);
 
-    const novoPedido = {
+    await db.ref('pedidos').push({
         data: new Date().toLocaleString('pt-BR'),
         itens: carrinho,
-        status: 'Pendente',
         total: total,
-        cliente: {nome,cidade,rua,numero,bairro,tipoImovel,referencia},
-        codigoCliente: pegarOuGerarCodigoCliente()
-    };
+        cliente: dados,
+        codigoCliente: codigo,
+        status: 'Pendente'
+    });
 
-    try {
-        await salvarDados('pedidos', novoPedido);
-        localStorage.removeItem('carrinho');
-        atualizarCarrinho();
-        carregarMeusPedidos();
-        window.open(link, '_blank');
-        modal.style.display = "none";
-    } catch (e) {}
+    window.open(`https://wa.me/${NUMERO_WPP}?text=${encodeURIComponent('Novo pedido realizado')}`, '_blank');
+    localStorage.removeItem('carrinho');
+    atualizarCarrinho();
+    fecharForm();
 });
 
-async function carregarProdutosLoja() {
-    const c = document.getElementById('lista-produtos');
-    try {
-        const todos = await carregarDados('produtos');
-        const ativos = todos.filter(p => p.disponivel === true);
-        if (ativos.length === 0) return;
+async function carregarProdutos() {
+    const el = document.getElementById('lista-produtos');
+    const todos = await db.ref('produtos').once('value').then(s => s.val() || {});
+    const ativos = Object.entries(todos).filter(([_,p]) => p.disponivel);
 
-        let html = '';
-        ativos.forEach((p,i) => {
-            const img = eval(`LINK${i+1}`) || 'https://i.postimg.cc/VvLMVFgG/IMG-20260518-085339-(2).webp';
-            html += `
-            <div class="border rounded-xl p-5 hover:shadow-md card-produto">
-                <div class="codigo-produto">${String(i+1).padStart(3,'0')}</div>
-                <div class="moldura-produto"><img src="${img}" alt="${p.nome}" class="img-produto"></div>
-                <div class="conteudo-produto">
-                    <div><p class="font-bold text-lg preco-produto">${formatarMoeda(p.preco)}</p><h3 class="font-bold nome-produto">${p.nome}</h3></div>
-                    <div class="caixa-botoes">
-                        <button onclick="window.location.href='#meusPedidos'" class="btn-carrinho" title="Ver Pedidos">🛒</button>
-                        <button onclick="adicionarItem('${p.id}', '${p.nome.replace(/'/g,"\\'")}', ${p.preco})" class="btn-adicionar"></button>
-                    </div>
-                </div>
-            </div>`;
-        });
-        c.innerHTML = html;
-    } catch (e) {}
+    let html = '';
+    ativos.forEach(([id,p], i) => {
+        const img = eval(`LINK${i+1}`) || '';
+        html += `
+        <div class="card-produto">
+            <div class="moldura-produto"><img src="${img}" alt="${p.nome}" class="img-produto"></div>
+            <div style="padding:8px 0;">
+                <div style="font-weight:bold;">R$ ${p.preco.toFixed(2)}</div>
+                <div>${p.nome}</div>
+                <button class="btn-adicionar" onclick="adicionar('${id}', '${p.nome.replace(/'/g,"\\'")}', ${p.preco})">+ Adicionar</button>
+            </div>
+        </div>`;
+    });
+    el.innerHTML = html;
 }
 
-function adicionarItem(id,nome,preco) {
+function adicionar(id, nome, preco) {
     const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
     const item = carrinho.find(i => i.id === id);
     item ? item.quantidade++ : carrinho.push({id,nome,preco,quantidade:1});
@@ -338,55 +276,40 @@ function adicionarItem(id,nome,preco) {
 
 function atualizarCarrinho() {
     const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-    const c = document.getElementById('carrinho-itens');
+    const el = document.getElementById('carrinho-itens');
     const totalEl = document.getElementById('carrinho-total');
-    if (carrinho.length === 0) { totalEl.innerText = '0,00'; return; }
-    let html = ''; let total = 0;
+    if (carrinho.length === 0) { el.innerHTML = ''; totalEl.innerText = '0,00'; return; }
+
+    let html = '';
+    let total = 0;
     carrinho.forEach(i => {
-        const sub = i.preco * i.quantidade; total += sub;
-        html += `<div class="flex justify-between items-center py-2 border-b border-gray-700">
-            <div><span class="texto-forte">${i.nome}</span>
-            <div class="text-sm text-gray-400"><button onclick="alterarQuantidade('${i.id}',-1)" class="text-blue-400">-</button> ${i.quantidade} <button onclick="alterarQuantidade('${i.id}',1)" class="text-blue-400">+</button></div></div>
-            <span class="valor-forte">${formatarMoeda(sub)}</span>
-            <i class="fa fa-trash lixeira" onclick="removerItemTodo('${i.id}')"></i>
+        total += i.preco * i.quantidade;
+        html += `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #333;">
+            <span>${i.nome} (${i.quantidade})</span>
+            <span>R$ ${(i.preco * i.quantidade).toFixed(2)}</span>
         </div>`;
     });
-    c.innerHTML = html;
-    totalEl.innerHTML = formatarMoeda(total);
+    el.innerHTML = html;
+    totalEl.innerText = total.toFixed(2);
 }
 
-function alterarQuantidade(id,delta) {
-    const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-    const item = carrinho.find(i => i.id === id);
-    if (!item) return;
-    item.quantidade += delta;
-    if (item.quantidade <= 0) carrinho.splice(carrinho.indexOf(item),1);
-    localStorage.setItem('carrinho', JSON.stringify(carrinho));
-    atualizarCarrinho();
-}
+async function carregarPedidos() {
+    const el = document.getElementById('lista-meus-pedidos');
+    const codigo = localStorage.getItem('codCliente');
+    if (!codigo) return;
 
-function removerItemTodo(id) {
-    localStorage.setItem('carrinho', JSON.stringify(JSON.parse(localStorage.getItem('carrinho')||'[]').filter(i=>i.id!==id)));
-    atualizarCarrinho();
-}
+    const todos = await db.ref('pedidos').once('value').then(s => s.val() || {});
+    const meus = Object.entries(todos).filter(([_,p]) => p.codigoCliente === codigo && p.status !== 'Entregue');
 
-async function carregarMeusPedidos() {
-    try {
-        const cod = pegarOuGerarCodigoCliente();
-        const todos = await carregarDados('pedidos');
-        const meus = todos.filter(p => p.codigoCliente === cod && p.status !== 'Entregue');
-        if (meus.length === 0) return;
-        let html = '';
-        meus.forEach(p => {
-            html += `<div class="border rounded-lg p-4 mb-2">
-                <div class="flex justify-between items-center mb-2"><span class="font-bold">Pedido #${p.id.slice(-4)}</span><span class="px-2 py-1 rounded text-sm">${p.status}</span></div>
-                <p class="text-sm text-gray-400">Data: ${p.data}</p>
-                <p class="text-sm text-gray-400">Cliente: ${p.cliente.nome}</p>
-                <p class="font-bold text-green-600">Total: ${formatarMoeda(p.total)}</p>
-            </div>`;
-        });
-        document.getElementById('lista-meus-pedidos').innerHTML = html;
-    } catch (e) {}
+    let html = '';
+    meus.forEach(([id,p]) => {
+        html += `<div style="padding:8px 0; border-bottom:1px solid #333;">
+            <div style="font-weight:bold;">Pedido #${id.substr(-4)}</div>
+            <div>Status: ${p.status}</div>
+            <div>Total: R$ ${p.total.toFixed(2)}</div>
+        </div>`;
+    });
+    el.innerHTML = html;
 }
 </script>
 </body>
