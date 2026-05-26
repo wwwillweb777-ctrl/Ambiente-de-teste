@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Caixa Registradora - Atendente</title>
+    <title>Caixa Registradora - Atendente</title>
+    
+    <!-- ✅ BIBLIOTECAS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    
-    <!-- ✅ CHAMADA DO CONFIG JÁ NO INÍCIO, GARANTIDO -->
     <script src="config.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
 
@@ -200,6 +200,50 @@
     </style>
 </head>
 <body class="bg-gray-50">
+
+    <!-- ✅ PROTEÇÃO DE ACESSO (CORRIGIDA E NO LUGAR CERTO) -->
+    <script>
+        if (!localStorage.getItem('usuarioLogado') || localStorage.getItem('usuarioLogado') !== 'true') {
+            alert('🔒 Acesso restrito! Faça login primeiro.');
+            window.location.href = 'login.html';
+        }
+        if (window.location.pathname.includes('atendente.html') && localStorage.getItem('nivelAcesso') !== 'atendente' && localStorage.getItem('nivelAcesso') !== 'admin') {
+            alert('⛔ Acesso negado! Você não tem permissão para essa área.');
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // ✅ INICIALIZAÇÃO DO FIREBASE (ÚNICA E CORRETA)
+        let firebaseConfig;
+        let db;
+        if (typeof CONFIG_FIREBASE !== 'undefined') {
+            firebaseConfig = CONFIG_FIREBASE;
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+        } else {
+            console.error("Arquivo config.js não encontrado ou variável CONFIG_FIREBASE está faltando!");
+        }
+
+        // ✅ FUNÇÕES GERAIS
+        function salvarDados(caminho, dados) {
+            if(!db) return Promise.reject("Banco não conectado");
+            return db.ref(caminho).set(dados);
+        }
+        function carregarDados(caminho) {
+            if(!db) return Promise.resolve([]);
+            return db.ref(caminho).once('value').then(snap => {
+                const valor = snap.val();
+                if (!valor) return [];
+                return Array.isArray(valor) ? valor.filter(Boolean) : Object.values(valor);
+            });
+        }
+        function formatarMoeda(v) {
+            return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+    </script>
+
     <header class="bg-purple-700 text-white py-3 shadow-lg fixed w-full z-50 top-0 left-0">
         <div class="container mx-auto relative">
             <button class="btn-menu btn-vermelho" onclick="sairDoSistema()">Sair</button>
@@ -218,7 +262,7 @@
         <div id="aba-pedidos" class="aba-conteudo">
             <div class="bg-white/5 rounded-2xl shadow p-5 mb-6 border border-gray-800">
                 <div class="flex flex-wrap gap-2 mb-5 justify-center">
-                    <button class="btn-menu btn-azul filtro-btn" onclick="filtrarPedidos('todos')">Todos</button>
+                    <button class="btn-menu btn-azul filtro-btn filtro-ativo" onclick="filtrarPedidos('todos')">Todos</button>
                     <button class="btn-menu btn-azul-claro filtro-btn" onclick="filtrarPedidos('Pendente')">Pendentes</button>
                     <button class="btn-menu btn-azul-claro filtro-btn" onclick="filtrarPedidos('Entregue')">Entregues</button>
                     <button class="btn-menu btn-azul-claro filtro-btn" onclick="filtrarPedidos('Cancelado')">Cancelados</button>
@@ -325,412 +369,364 @@
          </div>
      </div>
 
-     <script>
-         let firebaseConfig;
-         let db;
-
-         // ✅ AGORA CHAMA O CONFIG DE FORMA GARANTIDA E VISÍVEL
-         if (typeof CONFIG_FIREBASE !== 'undefined') {
-             firebaseConfig = CONFIG_FIREBASE;
-             if (!firebase.apps.length) {
-                 firebase.initializeApp(firebaseConfig);
-             }
-             db = firebase.database();
-         } else {
-             // Se por acaso não achar o config, avisa só pra eu saber, não aparece pro usuário
-             console.error("Arquivo config.js não carregado ou variável CONFIG_FIREBASE não existe");
-         }
-
-         function sairDoSistema() {
-             if(confirm("Deseja realmente sair?")) {
-                 window.location.href = 'index.html';
-             }
-         }
-
-         // ✅ SALVA NO MESMO ENDEREÇO QUE O ADMIN LÊ
-         function salvarDados(caminho, dados) {
-             if(!db) return Promise.reject("Banco não conectado");
-             return db.ref(caminho).set(dados);
-         }
-
-         // ✅ LÊ DO MESMO ENDEREÇO QUE O ADMIN USA
-         function carregarDados(caminho) {
-             if(!db) return Promise.resolve([]);
-             return db.ref(caminho).once('value').then(snap => {
-                 const valor = snap.val();
-                 if (!valor) return [];
-                 return Array.isArray(valor) ? valor.filter(Boolean) : Object.values(valor);
-             });
-         }
-
-         let nomeAtendenteGlobal = "Não identificado";
-
-         async function getNomeAtendenteAtual() {
-             if(!db) return 'Não identificado';
-             const atendente = await db.ref('atendente_cadastro').once('value');
-             const dados = atendente.val();
-             if (dados && dados.nome) {
-                 nomeAtendenteGlobal = dados.nome;
-                 return dados.nome;
-             }
-             nomeAtendenteGlobal = "Não identificado";
-             return 'Não identificado';
-         }
-
-         function formatarMoeda(v) {
-             return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-         }
-
-         function abrirAba(nome) {
-             document.querySelectorAll('.aba-conteudo').forEach(el => el.classList.add('hidden'));
-             document.getElementById(`aba-${nome}`).classList.remove('hidden');
-
-             document.querySelectorAll('.btn-menu').forEach(btn => {
-                 btn.classList.remove('btn-azul');
-                 btn.classList.add('btn-azul-claro');
-             });
-             document.getElementById(`btn-${nome}`).classList.remove('btn-azul-claro');
-             document.getElementById(`btn-${nome}`).classList.add('btn-azul');
-
-             if(nome === 'pedidos') carregarPedidos();
-         }
-
-         let filtroAtual = 'todos';
-
-         document.addEventListener('DOMContentLoaded', async () => {
-             if(!db) return;
-             await getNomeAtendenteAtual();
-             carregarPedidos();
-             carregarProdutosCadastrados();
-             verificarCadastroAtendente();
-             carregarHistoricoTrocas();
-
-             // ✅ SINCRONIZAÇÃO EM TEMPO REAL: ATENDENTE <-> ADMIN <-> INDEX
-             db.ref('pedidos').on('value', () => {
-                 if(!document.getElementById('aba-pedidos').classList.contains('hidden')) {
-                     carregarPedidos();
-                 }
-             });
-
-             db.ref('produtos').on('value', () => {
-                 carregarProdutosCadastrados();
-             });
-
-             db.ref('atendente_cadastro').on('value', async () => {
-                 await getNomeAtendenteAtual();
-             });
-
-             db.ref('historico_trocas').on('value', () => {
-                 carregarHistoricoTrocas();
-             });
-         });
-
-         async function carregarPedidos() {
-             const pedidos = await carregarDados('pedidos');
-             const container = document.getElementById('lista-pedidos');
-
-             if (pedidos.length === 0) {
-                 container.innerHTML = '<p class="text-gray-400 text-center py-6">Nenhum pedido recebido ainda.</p>';
-                 return;
-             }
-
-             let pedidosFiltrados = pedidos;
-             if (filtroAtual !== 'todos') {
-                 pedidosFiltrados = pedidos.filter(p => p.status === filtroAtual);
-             }
-
-             if (pedidosFiltrados.length === 0) {
-                 container.innerHTML = `<p class="text-gray-400 text-center py-6">Nenhum pedido com status "${filtroAtual}".</p>`;
-                 return;
-             }
-
-             pedidosFiltrados.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-
-             container.innerHTML = '';
-             pedidosFiltrados.forEach(p => {
-                 const classeStatus = p.status === 'Entregue' ? 'status-entregue' : p.status === 'Cancelado' ? 'status-cancelado' : 'status-pendente';
-
-                 let listaItens = '';
-                 if (p.itens && Array.isArray(p.itens)) {
-                     p.itens.forEach(item => {
-                         listaItens += `<p class="text-sm text-gray-300">• ${item.nome} <span class="text-gray-500">x${item.quantidade}</span> - ${formatarMoeda(item.preco * item.quantidade)}<br><span class="text-xs text-gray-400">${item.descricao || ''}</span></p>`;
-                     });
-                 }
-
-                 container.innerHTML += `
-                 <div class="item-container">
-                     <div class="w-full">
-                         <div class="flex flex-wrap justify-between items-start mb-2 gap-2">
-                             <h4 class="font-bold text-lg text-yellow-400">Pedido</h4>
-                             <span class="${classeStatus}">${p.status || 'Pendente'}</span>
-                         </div>
-
-                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                             <div>
-                                 <p class="text-sm"><strong>Cliente:</strong> ${p.cliente_nome || 'Não informado'}</p>
-                                 <p class="text-sm"><strong>Contato:</strong> ${p.cliente_whatsapp || 'Não informado'}</p>
-                                 <p class="text-sm"><strong>Endereço:</strong> ${p.cliente_endereco || 'Não informado'}</p>
-                                 <p class="text-sm text-xs text-gray-400"><strong>Ref:</strong> ${p.cliente_referencia || 'Sem referência'}</p>
-                             </div>
-                             <div>
-                                 <p class="text-sm"><strong>Pagamento:</strong> ${p.forma_pagamento || 'A definir'}</p>
-                                 <p class="text-sm"><strong>Observação:</strong> ${p.observacao || 'Nenhuma'}</p>
-                                 <p class="text-sm text-yellow-500 font-bold text-lg mt-1">Total: ${formatarMoeda(p.total || 0)}</p>
-                                 <p class="text-xs text-gray-500">Atendente: ${p.atendente_nome || nomeAtendenteGlobal}</p>
-                             </div>
-                         </div>
-
-                         <div class="mb-3 p-2 bg-black/30 rounded-lg">
-                             <p class="text-sm font-medium mb-1">Itens do Pedido:</p>
-                             ${listaItens || '<p class="text-sm text-gray-400">Nenhum item encontrado</p>'}
-                         </div>
-
-                         <div class="flex flex-wrap gap-2 justify-end border-t border-gray-700 pt-3">
-                             <button class="btn-acao btn-entregue" onclick="alterarStatusPedido('${p.id}', 'Entregue')">✅ Entregue</button>
-                             <button class="btn-acao btn-cancelar" onclick="alterarStatusPedido('${p.id}', 'Cancelado')">❌ Cancelar</button>
-                             <button class="btn-acao btn-editar" onclick="abrirModalEditarPedido('${p.id}')">✏️ Editar</button>
-                             <button class="btn-remover" onclick="removerItem('pedidos', '${p.id}', this)">🗑️</button>
-                         </div>
-                     </div>
-                 </div>
-                 `;
-             });
-         }
-
-         function filtrarPedidos(status) {
-             filtroAtual = status;
-             document.querySelectorAll('.filtro-btn').forEach(btn => {
-                 btn.classList.remove('filtro-ativo', 'btn-azul');
-                 btn.classList.add('btn-azul-claro');
-             });
-             event.target.classList.remove('btn-azul-claro');
-             event.target.classList.add('filtro-ativo', 'btn-azul');
-             carregarPedidos();
-         }
-
-         async function alterarStatusPedido(idPedido, novoStatus) {
-             if (!idPedido) { return; }
-             const nomeAtendente = await getNomeAtendenteAtual();
-             const pedidos = await carregarDados('pedidos');
-             const pedidosAtualizados = pedidos.map(p => {
-                 if (p.id === idPedido) {
-                     // ✅ DADOS COMPLETOS VÃO PARA O ADMIN TAMBÉM
-                     return { ...p, status: novoStatus, atendente_nome: nomeAtendente, data_alteracao: new Date().toLocaleString('pt-BR') };
-                 }
-                 return p;
-             });
-             await salvarDados('pedidos', pedidosAtualizados);
-         }
-
-         let pedidoEmEdicao = null;
-         async function abrirModalEditarPedido(idPedido) {
-             const pedidos = await carregarDados('pedidos');
-             const pedido = pedidos.find(p => p.id === idPedido);
-             if (!pedido) { return; }
-
-             pedidoEmEdicao = pedido;
-             document.getElementById('edit-pedido-id').value = pedido.id;
-             document.getElementById('edit-status').value = pedido.status || 'Pendente';
-             document.getElementById('edit-forma-pagamento').value = pedido.forma_pagamento || 'Dinheiro';
-             document.getElementById('edit-observacao').value = pedido.observacao || '';
-
-             document.getElementById('modalEditar').classList.remove('hidden');
-         }
-
-         function fecharModalEditar() {
-             document.getElementById('modalEditar').classList.add('hidden');
-             pedidoEmEdicao = null;
-         }
-
-         async function salvarEdicaoPedido() {
-             if (!pedidoEmEdicao) return;
-
-             const novoStatus = document.getElementById('edit-status').value;
-             const novaForma = document.getElementById('edit-forma-pagamento').value;
-             const novaObs = document.getElementById('edit-observacao').value;
-             const nomeAtendente = await getNomeAtendenteAtual();
-
-             const pedidos = await carregarDados('pedidos');
-             const pedidosAtualizados = pedidos.map(p => {
-                 if (p.id === pedidoEmEdicao.id) {
-                     // ✅ TUDO O QUE EDITAR VAI DIRETO PARA O ADMIN
-                     return {
-                         ...p,
-                         status: novoStatus,
-                         forma_pagamento: novaForma,
-                         observacao: novaObs,
-                         atendente_nome: nomeAtendente,
-                         ultima_alteracao: new Date().toLocaleString('pt-BR')
-                     };
-                 }
-                 return p;
-             });
-
-             await salvarDados('pedidos', pedidosAtualizados);
-             fecharModalEditar();
-         }
-
-         async function cadastrarProduto() {
-             const nome = document.getElementById('prod-nome').value.trim();
-             const preco = parseFloat(document.getElementById('prod-preco').value);
-             const descricao = document.getElementById('prod-descricao').value.trim();
-
-             if (!nome || isNaN(preco) || preco <= 0) {
-                 return;
-             }
-
-             const nomeAtendente = await getNomeAtendenteAtual();
-
-             const produtos = await carregarDados('produtos');
-             const novoProduto = {
-                 id: Date.now().toString(),
-                 nome: nome,
-                 preco: preco,
-                 descricao: descricao,
-                 disponivel: true,
-                 cadastrado_por: nomeAtendente,
-                 data_cadastro: new Date().toLocaleString('pt-BR')
-             };
-             produtos.push(novoProduto);
-
-             // ✅ PRODUTO CADASTRADO AQUI JÁ APARECE NO ADMIN
-             await salvarDados('produtos', produtos);
-
-             document.getElementById('prod-nome').value = '';
-             document.getElementById('prod-preco').value = '';
-             document.getElementById('prod-descricao').value = '';
-         }
-
-         async function carregarProdutosCadastrados() {
-             const produtos = await carregarDados('produtos');
-             const container = document.getElementById('lista-produtos-cadastrados');
-
-             if (produtos.length === 0) {
-                 container.innerHTML = '<p class="text-gray-400 text-center py-4">Nenhum produto cadastrado.</p>';
-                 return;
-             }
-
-             container.innerHTML = '';
-             produtos.forEach(prod => {
-                 container.innerHTML += `
-                 <div class="p-3 bg-white/5 rounded-lg shadow-sm item-container">
-                     <div>
-                         <p class="font-bold">${prod.nome}</p>
-                         <p class="text-green-500 font-medium">${formatarMoeda(prod.preco)}</p>
-                         <p class="text-xs text-gray-400">${prod.descricao || 'Sem descrição'}</p>
-                         <p class="text-xs text-gray-500">Cadastrado por: ${prod.cadastrado_por}</p>
-                     </div>
-                     <button class="btn-remover" onclick="removerItem('produtos', '${prod.id}', this)">🗑️</button>
-                 </div>
-                 `;
-             });
-         }
-
-         async function salvarCadastroAtendente() {
-             const nome = document.getElementById('atend-nome').value.trim();
-
-             if (!nome) {
-                 return;
-             }
-
-             const agora = new Date().toLocaleString('pt-BR');
-
-             const dadosAtendente = {
-                 id: 'atendente_atual',
-                 nome: nome,
-                 hora_entrada: agora,
-                 status: 'ativo'
-             };
-
-             try {
-                 // ✅ ENTRADA DE ATENDENTE VAI PRO ADMIN
-                 await salvarDados('atendente_cadastro', dadosAtendente);
-                 await getNomeAtendenteAtual();
-                 verificarCadastroAtendente();
-             } catch (erro) { }
-         }
-
-         async function verificarCadastroAtendente() {
-             const atendente = await db.ref('atendente_cadastro').once('value');
-             const dados = atendente.val();
-             const containerInfo = document.getElementById('dados-cadastrados');
-             const containerHistorico = document.getElementById('historico_trocas');
-
-             if (dados && dados.nome) {
-                 document.getElementById('info-nome').innerText = dados.nome;
-                 document.getElementById('info-entrada').innerText = 'Entrou às: ' + dados.hora_entrada;
-                 containerInfo.classList.remove('hidden');
-                 containerHistorico.classList.remove('hidden');
-                 document.getElementById('atend-nome').value = dados.nome;
-             } else {
-                 containerInfo.classList.add('hidden');
-                 containerHistorico.classList.add('hidden');
-             }
-         }
-
-         async function trocarAtendente() {
-             const atendenteAtual = await db.ref('atendente_cadastro').once('value');
-             const dadosAtual = atendenteAtual.val();
-             
-             if (!dadosAtual || !dadosAtual.nome) {
-                 return;
-             }
-
-             const horaSaida = new Date().toLocaleString('pt-BR');
-
-             const registroSaida = {
-                 id: Date.now().toString(),
-                 nome: dadosAtual.nome,
-                 entrada: dadosAtual.hora_entrada,
-                 saida: horaSaida
-             };
-
-             const historico = await carregarDados('historico_trocas');
-             historico.push(registroSaida);
-             // ✅ SAÍDA E TROCA DE TURNO TAMBÉM VAI PRO PAINEL ADMIN
-             await salvarDados('historico_trocas', historico);
-
-             await db.ref('atendente_cadastro').remove();
-             nomeAtendenteGlobal = "Não identificado";
-
-             verificarCadastroAtendente();
-         }
-
-         async function carregarHistoricoTrocas() {
-             const historico = await carregarDados('historico_trocas');
-             const lista = document.getElementById('lista-historico');
-
-             if (historico.length === 0) {
-                 lista.innerHTML = '<p class="text-gray-400 text-center">Nenhuma troca registrada</p>';
-                 return;
-             }
-
-             lista.innerHTML = '';
-             historico.reverse().forEach(reg => {
-                 lista.innerHTML += `
-                     <p class="text-gray-200">👤 ${reg.nome}<br>
-                     <small>Entrada: ${reg.entrada} | Saída: ${reg.saida}</small></p>
-                     <hr class="border-gray-700 my-1">
-                 `;
-             });
-         }
-
-         function removerItem(caminho, idItem, botaoClicado) {
-             if (!confirm('⚠️ ATENÇÃO! Essa ação irá APAGAR esse item definitivamente. Confirma?')) {
-                 return;
-             }
-
-             const itemParaRemover = botaoClicado.closest('.item-container');
-             itemParaRemover.style.opacity = '0';
-             itemParaRemover.style.transform = 'translateX(-20px)';
-
-             setTimeout(async () => {
-                 const dados = await carregarDados(caminho);
-                 const dadosAtualizados = dados.filter(item => String(item.id) !== String(idItem));
-                 // ✅ EXCLUSÃO FEITA AQUI É ATUALIZADA NO ADMIN NA HORA
-                 await salvarDados(caminho, dadosAtualizados);
-             }, 300);
-         }
-     </script>
+    <script>
+        let nomeAtendenteGlobal = "Não identificado";
+        let filtroAtual = 'todos';
+        let pedidoEmEdicao = null;
+
+        function sairDoSistema() {
+            if(confirm("Deseja realmente sair?")) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function getNomeAtendenteAtual() {
+            if(!db) return 'Não identificado';
+            const atendente = await db.ref('atendente_cadastro').once('value');
+            const dados = atendente.val();
+            if (dados && dados.nome) {
+                nomeAtendenteGlobal = dados.nome;
+                return dados.nome;
+            }
+            nomeAtendenteGlobal = "Não identificado";
+            return 'Não identificado';
+        }
+
+        function abrirAba(nome) {
+            document.querySelectorAll('.aba-conteudo').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`aba-${nome}`).classList.remove('hidden');
+
+            document.querySelectorAll('.btn-menu').forEach(btn => {
+                btn.classList.remove('btn-azul');
+                btn.classList.add('btn-azul-claro');
+            });
+            document.getElementById(`btn-${nome}`).classList.remove('btn-azul-claro');
+            document.getElementById(`btn-${nome}`).classList.add('btn-azul');
+
+            if(nome === 'pedidos') carregarPedidos();
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if(!db) {
+                alert("Erro de conexão com o banco de dados! Verifique o arquivo config.js");
+                return;
+            }
+            await getNomeAtendenteAtual();
+            carregarPedidos();
+            carregarProdutosCadastrados();
+            verificarCadastroAtendente();
+            carregarHistoricoTrocas();
+
+            // ✅ SINCRONIZAÇÃO EM TEMPO REAL
+            db.ref('pedidos').on('value', () => {
+                if(!document.getElementById('aba-pedidos').classList.contains('hidden')) {
+                    carregarPedidos();
+                }
+            });
+
+            db.ref('produtos').on('value', carregarProdutosCadastrados);
+            db.ref('atendente_cadastro').on('value', getNomeAtendenteAtual);
+            db.ref('historico_trocas').on('value', carregarHistoricoTrocas);
+        });
+
+        async function carregarPedidos() {
+            const pedidos = await carregarDados('pedidos');
+            const container = document.getElementById('lista-pedidos');
+
+            if (pedidos.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-6">Nenhum pedido recebido ainda.</p>';
+                return;
+            }
+
+            let pedidosFiltrados = pedidos;
+            if (filtroAtual !== 'todos') {
+                pedidosFiltrados = pedidos.filter(p => p.status === filtroAtual);
+            }
+
+            if (pedidosFiltrados.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-6">Nenhum pedido com status "${filtroAtual}".</p>`;
+                return;
+            }
+
+            pedidosFiltrados.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+            container.innerHTML = '';
+
+            pedidosFiltrados.forEach(p => {
+                const classeStatus = p.status === 'Entregue' ? 'status-entregue' : p.status === 'Cancelado' ? 'status-cancelado' : 'status-pendente';
+
+                let listaItens = '';
+                if (p.itens && Array.isArray(p.itens)) {
+                    p.itens.forEach(item => {
+                        listaItens += `<p class="text-sm text-gray-300">• ${item.nome} <span class="text-gray-500">x${item.quantidade}</span> - ${formatarMoeda(item.preco * item.quantidade)}<br><span class="text-xs text-gray-400">${item.descricao || ''}</span></p>`;
+                    });
+                }
+
+                container.innerHTML += `
+                <div class="item-container">
+                    <div class="w-full">
+                        <div class="flex flex-wrap justify-between items-start mb-2 gap-2">
+                            <h4 class="font-bold text-lg text-yellow-400">Pedido #${p.id?.slice(-4) || '0000'}</h4>
+                            <span class="${classeStatus}">${p.status || 'Pendente'}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <p class="text-sm"><strong>Cliente:</strong> ${p.cliente_nome || 'Não informado'}</p>
+                                <p class="text-sm"><strong>Contato:</strong> ${p.cliente_whatsapp || 'Não informado'}</p>
+                                <p class="text-sm"><strong>Endereço:</strong> ${p.cliente_endereco || 'Não informado'}</p>
+                                <p class="text-sm text-xs text-gray-400"><strong>Ref:</strong> ${p.cliente_referencia || 'Sem referência'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm"><strong>Pagamento:</strong> ${p.forma_pagamento || 'A definir'}</p>
+                                <p class="text-sm"><strong>Observação:</strong> ${p.observacao || 'Nenhuma'}</p>
+                                <p class="text-sm text-yellow-500 font-bold text-lg mt-1">Total: ${formatarMoeda(p.total || 0)}</p>
+                                <p class="text-xs text-gray-500">Atendente: ${p.atendente_nome || nomeAtendenteGlobal}</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 p-2 bg-black/30 rounded-lg">
+                            <p class="text-sm font-medium mb-1">Itens do Pedido:</p>
+                            ${listaItens || '<p class="text-sm text-gray-400">Nenhum item encontrado</p>'}
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 justify-end border-t border-gray-700 pt-3">
+                            <button class="btn-acao btn-entregue" onclick="alterarStatusPedido('${p.id}', 'Entregue')">✅ Entregue</button>
+                            <button class="btn-acao btn-cancelar" onclick="alterarStatusPedido('${p.id}', 'Cancelado')">❌ Cancelar</button>
+                            <button class="btn-acao btn-editar" onclick="abrirModalEditarPedido('${p.id}')">✏️ Editar</button>
+                            <button class="btn-remover" onclick="removerItem('pedidos', '${p.id}', this)">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+        }
+
+        function filtrarPedidos(status) {
+            filtroAtual = status;
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.classList.remove('filtro-ativo', 'btn-azul');
+                btn.classList.add('btn-azul-claro');
+            });
+            event.target.classList.remove('btn-azul-claro');
+            event.target.classList.add('filtro-ativo', 'btn-azul');
+            carregarPedidos();
+        }
+
+        async function alterarStatusPedido(idPedido, novoStatus) {
+            if (!idPedido) return;
+            const nomeAtendente = await getNomeAtendenteAtual();
+            const pedidos = await carregarDados('pedidos');
+            const pedidosAtualizados = pedidos.map(p => {
+                if (p.id === idPedido) {
+                    return { ...p, status: novoStatus, atendente_nome: nomeAtendente, data_alteracao: new Date().toLocaleString('pt-BR') };
+                }
+                return p;
+            });
+            await salvarDados('pedidos', pedidosAtualizados);
+        }
+
+        async function abrirModalEditarPedido(idPedido) {
+            const pedidos = await carregarPedidos();
+            const pedido = pedidos.find(p => p.id === idPedido);
+            if (!pedido) return;
+
+            pedidoEmEdicao = pedido;
+            document.getElementById('edit-pedido-id').value = pedido.id;
+            document.getElementById('edit-status').value = pedido.status || 'Pendente';
+            document.getElementById('edit-forma-pagamento').value = pedido.forma_pagamento || 'Dinheiro';
+            document.getElementById('edit-observacao').value = pedido.observacao || '';
+            document.getElementById('modalEditar').classList.remove('hidden');
+        }
+
+        function fecharModalEditar() {
+            document.getElementById('modalEditar').classList.add('hidden');
+            pedidoEmEdicao = null;
+        }
+
+        async function salvarEdicaoPedido() {
+            if (!pedidoEmEdicao) return;
+
+            const novoStatus = document.getElementById('edit-status').value;
+            const novaForma = document.getElementById('edit-forma-pagamento').value;
+            const novaObs = document.getElementById('edit-observacao').value;
+            const nomeAtendente = await getNomeAtendenteAtual();
+
+            const pedidos = await carregarDados('pedidos');
+            const pedidosAtualizados = pedidos.map(p => {
+                if (p.id === pedidoEmEdicao.id) {
+                    return {
+                        ...p,
+                        status: novoStatus,
+                        forma_pagamento: novaForma,
+                        observacao: novaObs,
+                        atendente_nome: nomeAtendente,
+                        ultima_alteracao: new Date().toLocaleString('pt-BR')
+                    };
+                }
+                return p;
+            });
+
+            await salvarDados('pedidos', pedidosAtualizados);
+            fecharModalEditar();
+        }
+
+        async function cadastrarProduto() {
+            const nome = document.getElementById('prod-nome').value.trim();
+            const preco = parseFloat(document.getElementById('prod-preco').value);
+            const descricao = document.getElementById('prod-descricao').value.trim();
+
+            if (!nome || isNaN(preco) || preco <= 0) {
+                alert('Preencha o nome e um preço válido!');
+                return;
+            }
+
+            const nomeAtendente = await getNomeAtendenteAtual();
+            const produtos = await carregarDados('produtos');
+            const novoProduto = {
+                id: Date.now().toString(),
+                nome: nome,
+                preco: preco,
+                descricao: descricao,
+                disponivel: true,
+                cadastrado_por: nomeAtendente,
+                data_cadastro: new Date().toLocaleString('pt-BR')
+            };
+            produtos.push(novoProduto);
+            await salvarDados('produtos', produtos);
+
+            document.getElementById('prod-nome').value = '';
+            document.getElementById('prod-preco').value = '';
+            document.getElementById('prod-descricao').value = '';
+            alert('✅ Produto cadastrado com sucesso!');
+        }
+
+        async function carregarProdutosCadastrados() {
+            const produtos = await carregarDados('produtos');
+            const container = document.getElementById('lista-produtos-cadastrados');
+
+            if (produtos.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-4">Nenhum produto cadastrado.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            produtos.forEach(prod => {
+                container.innerHTML += `
+                <div class="p-3 bg-white/5 rounded-lg shadow-sm item-container">
+                    <div>
+                        <p class="font-bold">${prod.nome}</p>
+                        <p class="text-green-500 font-medium">${formatarMoeda(prod.preco)}</p>
+                        <p class="text-xs text-gray-400">${prod.descricao || 'Sem descrição'}</p>
+                        <p class="text-xs text-gray-500">Cadastrado por: ${prod.cadastrado_por}</p>
+                    </div>
+                    <button class="btn-remover" onclick="removerItem('produtos', '${prod.id}', this)">🗑️</button>
+                </div>
+                `;
+            });
+        }
+
+        async function salvarCadastroAtendente() {
+            const nome = document.getElementById('atend-nome').value.trim();
+            if (!nome) {
+                alert('Digite seu nome para continuar!');
+                return;
+            }
+
+            const dadosAtendente = {
+                id: 'atendente_atual',
+                nome: nome,
+                hora_entrada: new Date().toLocaleString('pt-BR'),
+                status: 'ativo'
+            };
+
+            try {
+                await salvarDados('atendente_cadastro', dadosAtendente);
+                await getNomeAtendenteAtual();
+                verificarCadastroAtendente();
+                alert('✅ Cadastro salvo!');
+            } catch (erro) {
+                alert('❌ Erro ao salvar dados!');
+            }
+        }
+
+        async function verificarCadastroAtendente() {
+            const atendente = await db.ref('atendente_cadastro').once('value');
+            const dados = atendente.val();
+            const containerInfo = document.getElementById('dados-cadastrados');
+            const containerHistorico = document.getElementById('historico_trocas');
+
+            if (dados && dados.nome) {
+                document.getElementById('info-nome').innerText = dados.nome;
+                document.getElementById('info-entrada').innerText = 'Entrou às: ' + dados.hora_entrada;
+                containerInfo.classList.remove('hidden');
+                containerHistorico.classList.remove('hidden');
+                document.getElementById('atend-nome').value = dados.nome;
+            } else {
+                containerInfo.classList.add('hidden');
+                containerHistorico.classList.add('hidden');
+            }
+        }
+
+        async function trocarAtendente() {
+            if(!confirm('Deseja realmente encerrar esse turno e passar para outro atendente?')) return;
+
+            const atendenteAtual = await db.ref('atendente_cadastro').once('value');
+            const dadosAtual = atendenteAtual.val();
+            
+            if (!dadosAtual || !dadosAtual.nome) return;
+
+            const registroSaida = {
+                id: Date.now().toString(),
+                nome: dadosAtual.nome,
+                entrada: dadosAtual.hora_entrada,
+                saida: new Date().toLocaleString('pt-BR')
+            };
+
+            const historico = await carregarDados('historico_trocas');
+            historico.push(registroSaida);
+            await salvarDados('historico_trocas', historico);
+            await db.ref('atendente_cadastro').remove();
+            nomeAtendenteGlobal = "Não identificado";
+
+            verificarCadastroAtendente();
+            alert('🔄 Turno encerrado! Agora é só o próximo atendente se cadastrar.');
+        }
+
+        async function carregarHistoricoTrocas() {
+            const historico = await carregarDados('historico_trocas');
+            const lista = document.getElementById('lista-historico');
+
+            if (historico.length === 0) {
+                lista.innerHTML = '<p class="text-gray-400 text-center">Nenhuma troca registrada</p>';
+                return;
+            }
+
+            lista.innerHTML = '';
+            historico.reverse().forEach(reg => {
+                lista.innerHTML += `
+                    <p class="text-gray-200">👤 ${reg.nome}<br>
+                    <small>Entrada: ${reg.entrada} | Saída: ${reg.saida}</small></p>
+                    <hr class="border-gray-700 my-1">
+                `;
+            });
+        }
+
+        function removerItem(caminho, idItem, botaoClicado) {
+            if (!confirm('⚠️ ATENÇÃO! Essa ação irá APAGAR esse item definitivamente. Confirma?')) {
+                return;
+            }
+
+            const itemParaRemover = botaoClicado.closest('.item-container');
+            itemParaRemover.style.opacity = '0';
+            itemParaRemover.style.transform = 'translateX(-20px)';
+
+            setTimeout(async () => {
+                const dados = await carregarDados(caminho);
+                const dadosAtualizados = dados.filter(item => String(item.id) !== String(idItem));
+                await salvarDados(caminho, dadosAtualizados);
+            }, 300);
+        }
+    </script>
 </body>
 </html>
