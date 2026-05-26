@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Atendente</title>
+    <!-- ✅ LIGAÇÃO COM O CONFIG.JS -->
+    <script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+</head>
+<body>
+
+    <h1>🔒 ÁREA DE ATENDIMENTO</h1>
+    <p>Mylena, só pode ver e atender.</p>
+
+    <script>
+        firebase.initializeApp(CONFIG_FIREBASE);
+        const auth = firebase.auth();
+        // ✅ PROTEÇÃO E LIGAÇÃO DE VOLTA AO LOGIN
+        auth.onAuthStateChanged(usuario => {
+            if(!usuario || usuario.email !== EMAIL_ATENDENTE) {
+                alert("❌ ACESSO NEGADO!");
+                window.location.href = "login.html";
+            }
+        });
+    </script>
+
+</body>
+</html>
