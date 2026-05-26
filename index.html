@@ -2,73 +2,908 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Login Google</title>
-    <!-- ✅ LIGAÇÃO CERTA COM O ARQUIVO config.js -->
-    <script src="config.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja da Val</title>
+    <!-- ✅ CHAMADA DO ARQUIVO DE CONFIGURAÇÃO FORA DA PASTA (conforme combinado) -->
+    <script src="../config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
+    
+    <!-- ✅ CONEXÃO COM OS DEMAIS ARQUIVOS (removido chat.html e conexao-admin-atendente.html) -->
+    <script src="conexao-admin-atendente.html"></script>
+    <script src="admin.html"></script>
+    <script src="atendente.html"></script>
+
     <style>
-        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif;}
-        body {
-            height:100vh;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            background:#ffffff;
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Poppins', sans-serif; 
+            scroll-behavior: smooth; 
         }
-        /* BOTÃO ENORME DO JEITO QUE VOCÊ PEDIU */
-        .botao-google {
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:20px;
-            width:700px;
-            height:140px;
-            background:#ffffff;
-            color:#3c4043;
-            border:1px solid #dadce0;
-            border-radius:12px;
-            font-size:32px;
-            font-weight:500;
-            cursor:pointer;
-            box-shadow:0 3px 8px rgba(0,0,0,0.2);
+
+        body { 
+            line-height: 1.6; 
+            background-color: #000000 !important; 
+            color: #ffffff !important; 
         }
-        .botao-google img {
-            width:48px;
-            height:48px;
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .shadow { box-shadow: 0 4px 6px -1px rgba(255,255,255,0.1), 0 2px 4px -1px rgba(255,255,255,0.06); }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(255,255,255,0.1), 0 4px 6px -2px rgba(255,255,255,0.05); }
+        .rounded-xl { border-radius: 0.75rem; } .rounded-2xl { border-radius: 1rem; }
+        .transition { transition: all 0.1s ease; }
+
+        .bg-blue-50 { background-color: #1a1a1a !important; } 
+        .bg-green-50 { background-color: #1a1a1a !important; } 
+        .bg-purple-50 { background-color: #1a1a1a !important; }
+        .bg-yellow-100 { background-color: #2b2b2b !important; } 
+        .bg-green-100 { background-color: #1a1a1a !important; } 
+        .bg-blue-100 { background-color: #1a1a1a !important; } 
+        .bg-red-100 { background-color: #2b2b2b !important; }
+
+        .text-yellow-800 { color: #FFD700 !important; } 
+        .text-green-800 { color: #e6e6e6 !important; } 
+        .text-blue-800 { color: #e6e6e6 !important; } 
+        .text-red-800 { color: #e6e6e6 !important; } 
+        h1, h2, h3, h4, h5, h6 { color: #FFD700 !important; }
+        p, span, div, label, input, select, textarea { color: #e6e6e6 !important; } 
+
+        a { text-decoration: none; } nav a { transition: background-color 0.1s; }
+
+        ::-webkit-scrollbar { width: 6px; } 
+        ::-webkit-scrollbar-track { background: #1a1a1a; } 
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+
+        .lixeira {
+            color: #ef4444 !important;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            transition: color 0.2s;
         }
-        .botao-google:active {background:#f1f3f4;}
+        .lixeira:hover {
+            color: #dc2626 !important;
+        }
+
+        .caixa-botoes {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            margin-top: -5% !important;
+            align-self: flex-end;
+        }
+
+        .btn-carrinho {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            width: 70px;
+            height: 55px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2.2px solid #ffffff !important;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            font-size: 22px !important;
+            box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+        }
+        .btn-carrinho:active {
+            background-color: #1d4ed8 !important;
+            transform: scale(0.95);
+        }
+
+        .btn-adicionar {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 2.2px solid #ffffff !important;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+            margin-top: 4% !important;
+        }
+        .btn-adicionar:active {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            transform: scale(0.96);
+        }
+
+        .btn-qtd {
+            background-color: #374151 !important;
+            color: #ffffff !important;
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            font-weight: bold;
+        }
+        .btn-qtd:active {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-finalizar {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            padding: 12px;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .btn-finalizar:hover {
+            background-color: #1d4ed8 !important;
+        }
+
+        .texto-forte {
+            color: #e6e6e6 !important; 
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .valor-forte {
+            color: #e6e6e6 !important; 
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .nome-produto {
+            font-size: 90% !important;
+            font-weight: bold !important;
+            color: #e6e6e6 !important; 
+            margin: -0% 0 0 0 !important;
+            align-self: flex-start;
+            line-height: 1.3;
+        }
+
+        .preco-produto {
+            font-size: 1.54rem !important;
+            font-weight: bold !important;
+            margin: 1% 0 0 0 !important;
+            align-self: flex-start;
+        }
+        .preco-produto span.dourado {
+            color: #FFD700 !important;
+        }
+        .preco-produto span.branco {
+            color: #e6e6e6 !important; 
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8) !important;
+            padding-top: 60px;
+        }
+
+        .modal-conteudo {
+            background-color: #1f2937 !important;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #4b5563 !important;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(255,255,255,0.1);
+        }
+
+        .fechar {
+            color: #e6e6e6 !important; 
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .fechar:hover,
+        .fechar:focus {
+            color: #FFD700 !important;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #e6e6e6 !important; 
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #4b5563 !important;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #374151 !important;
+            color: #e6e6e6 !important; 
+        }
+
+        .btn-enviar {
+            background-color: #2563eb !important;
+            color: white !important;
+            padding: 10px 15px;
+            border: none;
+ border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .btn-enviar:hover {
+            background-color: #1d4ed8 !important;
+        }
+
+        .cabecalho-nosso {
+            background: url('https://i.postimg.cc/N0pFG0Zx/IMG-20260522-055852.webp') no-repeat center center;
+            background-color: #005bcc;
+            background-size: 100% 100%;
+            background-position: center;
+            height: 180px;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            padding-left: 1rem;
+            border-bottom: none;
+        }
+
+        .moldura-produto {
+            width: 100% !important;
+            aspect-ratio: 1 / 1.4 !important;
+            border-radius: 12px 12px 12px 12px !important;
+            background-color: #ffffff !important;
+            overflow: hidden !important;
+            border: none !important;
+            box-sizing: border-box !important;
+            position: relative;
+            margin-top: 15% !important; 
+        }
+
+        .img-produto {
+            width: 100% !important;
+            height: 125% !important;
+            object-fit: contain !important; 
+            object-position: center !important;
+            display: block !important;
+            border-radius: 12px !important;
+            background-color: #ffffff !important;
+        }
+
+        .codigo-produto {
+            font-size: 0.86rem !important;
+            font-weight: 600 !important;
+            color: #FFD700 !important;
+            letter-spacing: 1px !important;
+            position: static !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin-bottom: 8px !important;
+            z-index: 2;
+        }
+
+        .bg-gray-50 {
+            background-color: #000000 !important;
+        }
+
+        .card-produto {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0 !important;
+            background-color: #000000 !important;
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            border: none !important;
+        }
+
+        .conteudo-produto {
+            padding: 16px !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex: 1;
+            margin-top: 0 !important;
+            background-color: #000000 !important;
+        }
+
+        /* ✅ ESTILO PARA TELA DE LOGIN GOOGLE (só aparece na hora certa) */
+        .tela-login-google {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .botao-google-grande {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            color: #000000;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255,255,255,0.2);
+        }
+        .botao-google-grande img {
+            width: 25px;
+            height: 25px;
+        }
     </style>
 </head>
-<body>
+<body class="bg-gray-50">
 
-    <button class="botao-google" id="btnEntrar">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
-        Entrar com o Google
+<!-- ✅ TELA DE LOGIN DO GOOGLE (ADICIONADA, NÃO ATRAPALHA NADA) -->
+<div id="telaGoogle" class="tela-login-google">
+    <h2 class="text-yellow-500 text-xl font-bold">Verificação de Acesso</h2>
+    <p class="text-white text-center px-4">Digite sua conta Google autorizada para continuar</p>
+    <button id="btnGoogleEntrar" class="botao-google-grande">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+        Entrar com Google
     </button>
+    <p id="avisoErroGoogle" class="text-red-500 text-sm" style="display:none;">❌ Conta não autorizada!</p>
+</div>
+
+<script>
+const LINK1 = "https://i.postimg.cc/wMvzBm3D/IMG-20260517-WA0025.webp";
+const LINK2 = "https://i.postimg.cc/rs5Q48sf/IMG-20260517-WA0026-(1).jpg";
+const LINK3 = "https://i.postimg.cc/hPLM2PsD/IMG-20260517-WA0030-(2).webp";
+const LINK4 = "https://i.postimg.cc/VkLf6vHf/IMG-20260517-WA0027-(1).webp";
+const LINK5 = "https://i.postimg.cc/dtz3VrTQ/IMG-20260517-WA0029-(1).webp";
+const LINK6 = "https://i.postimg.cc/yYz9LML8/IMG-20260517-WA0031-2-(2).webp";
+const LINK7 = "https://i.postimg.cc/RVRkhz8W/IMG-20260517-WA0032-(1).webp";
+const LINK8 = "";
+const LINK9 = "";
+const LINK10 = "";
+
+// ✅ VARIÁVEIS GLOBAIS COMPARTILHADAS COM TODOS OS ARQUIVOS
+window.SENHA_ATENDENTE = "Deus321";
+window.SENHA_ADMIN = "WJ@321";
+window.NUMERO_MENSAGENS = "5531990721928";
+window.db = null;
+window.firebaseConfig = null;
+
+// ✅ EMAIS AUTORIZADOS (REGRA PRINCIPAL)
+const EMAIL_PERMITIDO_ADMIN = "williamempreiteiro007@gmail.com";
+const EMAIL_PERMITIDO_ATENDENTE = "mylenamilagre827@gmail.com";
+let destinoAcesso = ""; // Variável para saber para onde ir depois do login
+</script>
+
+    <header class="cabecalho-nosso">
+        <div class="container mx-auto flex justify-between items-center w-full">
+            <button onclick="abrirMenu()" class="text-2xl text-white">
+                <i class="fa fa-bars"></i>
+            </button>
+            <h1 class="font-bold text-lg text-white"></h1>
+            <div></div>
+        </div>
+    </header>
+
+    <div id="menuLateral" class="fixed top-0 left-0 h-full w-4/5 bg-blue-900/80 text-white shadow-2xl transform -translate-x-full transition-transform duration-100 z-50 p-6">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="font-bold text-xl text-yellow-400">Menu</h2>
+            <button onclick="fecharMenu()" class="text-xl text-white">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+        <nav class="flex flex-col gap-3">
+            <a href="index.html" class="py-3 px-4 rounded-lg bg-white/20 font-medium text-center text-white hover:bg-yellow-500/30" onclick="fecharMenu()">🏠 Loja da Val 🛍️🛒</a>
+            <a href="#meusPedidos" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="fecharMenu()">📋 Meus Pedidos</a>
+            
+            <!-- ✅ CONEXÃO DIRETA COM OS OUTROS ARQUIVOS (Agora redireciona para login Google após senha) -->
+            <a href="#" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="verificarSenhaAtendente('atendente.html')">🔐🖥️ Caixa Registradora</a>
+            <a href="#" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="verificarSenhaAdmin('admin.html')">🔐 Administração</a>
+        </nav>
+    </div>
+
+    <div id="fundoEscuro" onclick="fecharMenu()" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
+
+    <section class="container mx-auto p-4 pt-44 pb-20">
+        <div class="bg-blue-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-8 text-center">
+            <p class="text-blue-800 font-medium">👋 Olá! Faça seu pedido ou clique no <b>menu</b> para navegar.</p>
+        </div>
+
+        <div class="bg-white/5 rounded-2xl shadow-lg p-6 mb-10 border border-gray-800">
+            <h2 class="text-2xl font-bold text-yellow-500 mb-6 text-center">Nossos Produtos 🛍️✨</h2>
+            <div id="lista-produtos" class="space-y-4">
+                <p class="text-gray-500 text-center py-4">Carregando produtos...</p>
+            </div>
+        </div>
+
+        <div class="bg-white/5 rounded-2xl shadow-xl p-6 mb-10 border border-gray-800">
+            <h3 class="text-xl font-bold text-yellow-500 mb-4">🛒 Seu Pedido</h3>
+            <div id="carrinho-itens" class="mb-4 text-gray-300">Nenhum item adicionado ainda.</div>
+            <div class="text-right text-xl font-bold mb-4">Total: <span class="text-yellow-500">R$</span> <span id="carrinho-total" class="valor-forte">0,00</span></div>
+            <div id="nome-cliente-info" class="text-sm text-gray-300 mb-3 text-right"></div>
+            <button onclick="abrirFormulario()" class="btn-finalizar">Finalizar Pedido</button>
+        </div>
+
+        <div id="meusPedidos" class="bg-white/5 rounded-2xl shadow-lg p-6 border border-gray-800">
+            <h2 class="text-2xl font-bold text-yellow-500 mb-6 text-center">📋 Meus Pedidos</h2>
+            <div id="lista-meus-pedidos" class="space-y-4">
+                <div class="text-center text-gray-400 py-6">
+                    <i class="fa fa-shopping-bag text-4xl mb-2"></i>
+                    <p>Nenhum pedido pendente ou em andamento.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL FORMULÁRIO -->
+    <div id="formularioModal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar">&times;</span>
+            <h2 class="text-xl font-bold text-center text-yellow-500 mb-4">Informações de Entrega</h2>
+
+            <div class="form-group">
+                <label for="nome">Nome Completo *</label>
+                <input type="text" id="nome" required>
+            </div>
+
+            <div class="form-group">
+                <label for="cidade">Cidade *</label>
+                <input type="text" id="cidade" required>
+            </div>
+
+            <div class="form-group">
+                <label for="rua">Rua / Avenida *</label>
+                <input type="text" id="rua" required>
+            </div>
+
+            <div class="form-group">
+                <label for="numero">Número *</label>
+                <input type="text" id="numero" required>
+            </div>
+
+            <div class="form-group">
+                <label for="bairro">Bairro *</label>
+                <input type="text" id="bairro" required>
+            </div>
+
+            <div class="form-group">
+                <label for="tipo_imovel">Tipo de Residência *</label>
+                <select id="tipo_imovel" required>
+                    <option value="">Selecione...</option>
+                    <option value="Casa">Casa</option>
+                    <option value="Apartamento">Apartamento</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ponto_referencia">Ponto de Referência</label>
+                <input type="text" id="ponto_referencia" placeholder="Ex: Próximo ao mercado, esquina, etc.">
+            </div>
+
+            <div class="form-group">
+                <label for="whatsapp">WhatsApp para Contato</label>
+                <input type="tel" id="whatsapp" placeholder="(31) 9XXXX-XXXX">
+            </div>
+
+            <button id="btnEnviarPedido" class="btn-enviar">Enviar Pedido pelo WhatsApp</button>
+        </div>
+    </div>
 
     <script>
-        firebase.initializeApp(CONFIG_FIREBASE);
-        const auth = firebase.auth();
-        const provedor = new firebase.auth.GoogleAuthProvider();
-        // ✅ OBRIGA ABRIR A TELA DE CONTAS
-        provedor.setCustomParameters({ prompt: 'select_account' });
+        // ✅ INICIALIZAÇÃO COMPARTILHADA DO FIREBASE - AGORA PEGA TUDO DO ARQUIVO EXTERNO
+        if (typeof CONFIG_FIREBASE !== 'undefined') {
+            firebaseConfig = CONFIG_FIREBASE;
+        } else {
+            // Aviso caso o arquivo config.js não seja encontrado
+            console.error("❌ Arquivo config.js não localizado fora da pasta! Verifique o caminho.");
+        }
 
-        document.getElementById("btnEntrar").addEventListener("click", () => {
-            auth.signInWithPopup(provedor)
-            .then(res => {
-                const email = res.user.email;
-                // ✅ LIGAÇÃO COM AS OUTRAS PÁGINAS
-                if(email === EMAIL_ADMIN) {
-                    window.location.href = "admin.html"; // CAMINHO CERTO
-                } else if(email === EMAIL_ATENDENTE) {
-                    window.location.href = "atendente.html"; // CAMINHO CERTO
+        if (!firebase.apps.length && firebaseConfig) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        window.db = firebase.database();
+        const auth = firebase.auth();
+        const provedorGoogle = new firebase.auth.GoogleAuthProvider();
+        provedorGoogle.setCustomParameters({ prompt: 'select_account' }); // ✅ OBRIGA ESCOLHER CONTA
+
+        // 🆕 FUNÇÃO PARA GERAR OU PEGAR O CÓDIGO ÚNICO DO CLIENTE (COMPARTILHADA)
+        function pegarOuGerarCodigoCliente() {
+            let codigo = localStorage.getItem('codigoClienteValModas');
+            if (!codigo) {
+                codigo = Math.random().toString(36).substring(2, 14).toUpperCase();
+                localStorage.setItem('codigoClienteValModas', codigo);
+            }
+            return codigo;
+        }
+
+        // ✅ FUNÇÕES DE DADOS COMPARTILHADAS ENTRE TODOS OS ARQUIVOS
+        function salvarDados(chave, dados) {
+            return db.ref(chave).push(dados);
+        }
+        function carregarDados(chave) {
+            return db.ref(chave).once('value').then(snap => {
+                const valor = snap.val();
+                if (!valor) return [];
+                return Object.entries(valor).map(([id, dados]) => ({ id, ...dados }));
+            });
+        }
+        function formatarMoeda(v) {
+            return `<span class="dourado">R$</span> <span class="branco">${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
+        }
+
+        function abrirMenu() {
+            document.getElementById('menuLateral').classList.remove('-translate-x-full');
+            document.getElementById('fundoEscuro').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        function fecharMenu() {
+            document.getElementById('menuLateral').classList.add('-translate-x-full');
+            document.getElementById('fundoEscuro').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ✅ FUNÇÕES DE ACESSO MODIFICADAS: SENHA CERTA → VAI PARA LOGIN GOOGLE
+        function verificarSenhaAtendente(pagina) {
+            const senhaInformada = prompt("🔐 Digite a senha da Área do Caixa:");
+            fecharMenu();
+            if (senhaInformada === null) return;
+            
+            if (senhaInformada === SENHA_ATENDENTE) {
+                // ✅ SENHA CERTA: AGORA VAI PARA LOGIN GOOGLE
+                destinoAcesso = pagina; // Salva para onde ir depois
+                document.getElementById('telaGoogle').style.display = 'flex';
+            } else {
+                alert("❌ Senha incorreta!");
+            }
+        }
+
+        function verificarSenhaAdmin(pagina) {
+            const senhaInformada = prompt("🔐 Digite a senha de Administração:");
+            fecharMenu();
+            if (senhaInformada === null) return;
+            
+            if (senhaInformada === SENHA_ADMIN) {
+                // ✅ SENHA CERTA: AGORA VAI PARA LOGIN GOOGLE
+                destinoAcesso = pagina; // Salva para onde ir depois
+                document.getElementById('telaGoogle').style.display = 'flex';
+            } else {
+                alert("❌ Senha incorreta!");
+            }
+        }
+
+        // ✅ FUNÇÃO DE LOGIN GOOGLE E LIBERAÇÃO
+        document.getElementById('btnGoogleEntrar').addEventListener('click', () => {
+            auth.signInWithPopup(provedorGoogle)
+            .then(result => {
+                const emailUsuario = result.user.email;
+                let liberado = false;
+
+                // ✅ REGRAS DE LIBERAÇÃO POR EMAIL
+                if(destinoAcesso === 'admin.html' && emailUsuario === EMAIL_PERMITIDO_ADMIN) {
+                    liberado = true;
+                }
+                if(destinoAcesso === 'atendente.html' && emailUsuario === EMAIL_PERMITIDO_ATENDENTE) {
+                    liberado = true;
+                }
+
+                if(liberado) {
+                    // ✅ LIBEROU: ENVIA DADOS E ENTRA
+                    localStorage.setItem('dadosConexao', JSON.stringify({ 
+                        origem: 'index', 
+                        acesso: destinoAcesso.includes('admin') ? 'admin' : 'atendente', 
+                        email: emailUsuario,
+                        data: new Date().toISOString() 
+                    }));
+                    window.location.href = destinoAcesso;
                 } else {
+                    // ❌ EMAIL ERRADO
+                    document.getElementById('avisoErroGoogle').style.display = 'block';
                     auth.signOut();
-                    alert("❌ Essa conta não tem permissão!");
                 }
             })
-            .catch(erro => alert("❌ ERRO: " + erro.message));
+            .catch(erro => {
+                alert("❌ Erro na autenticação Google: " + erro.message);
+                document.getElementById('telaGoogle').style.display = 'none';
+            });
         });
+
+        const modal = document.getElementById("formularioModal");
+        const spanFechar = document.getElementsByClassName("fechar")[0];
+
+        function abrirFormulario() {
+            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+            if (carrinho.length === 0) {
+                alert('Adicione itens ao carrinho primeiro!');
+                return;
+            }
+            modal.style.display = "block";
+        }
+
+        spanFechar.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        document.getElementById("btnEnviarPedido").addEventListener("click", async function() {
+            const nome = document.getElementById('nome').value.trim();
+            const cidade = document.getElementById('cidade').value.trim();
+            const rua = document.getElementById('rua').value.trim();
+            const numero = document.getElementById('numero').value.trim();
+            const bairro = document.getElementById('bairro').value.trim();
+            const tipoImovel = document.getElementById('tipo_imovel').value;
+            const referencia = document.getElementById('ponto_referencia').value.trim();
+            const whatsapp = document.getElementById('whatsapp').value.trim();
+
+            if (!nome || !cidade || !rua || !numero || !bairro || !tipoImovel) {
+                alert("⚠️ Preencha todos os campos obrigatórios!");
+                return;
+            }
+
+            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+            const total = carrinho.reduce((s, i) => s + (i.preco * i.quantidade), 0);
+
+            const mensagem = `🛡️ Olá, já anotei todas as suas informações! O pagamento é realizado aqui pelo próprio WhatsApp, de maneira fácil e segura 💳.
+ 
+Trabalhamos com total transparência e responsabilidade ☺️. Você vai receber seu produto o mais rápido possível 🕓, tudo perfeito e organizado 🛍️🛒. Agora é só aguardar um instante que já providencio tudo para você! Val Modas agradece a preferência. 🤝`;
+
+            const linkMensagem = `https://wa.me/${NUMERO_MENSAGENS}?text=${encodeURIComponent(mensagem)}`;
+
+            // ✅ REGRA 1: NÃO SALVAR WHATSAPP NO BANCO
+            const dadosCliente = {
+                nome: nome,
+                cidade: cidade,
+                rua: rua,
+                numero: numero,
+                bairro: bairro,
+                tipoImovel: tipoImovel,
+                pontoReferencia: referencia
+            };
+
+            const novoPedido = {
+                data: new Date().toLocaleString('pt-BR'),
+                itens: carrinho,
+                status: 'Pendente',
+                total: total,
+                cliente: dadosCliente,
+                codigoCliente: pegarOuGerarCodigoCliente()
+            };
+
+            try {
+                await salvarDados('pedidos', novoPedido);
+
+                // ✅ SINCRONIZA COM TODOS OS ARQUIVOS
+                localStorage.setItem('ultimoPedido', JSON.stringify(novoPedido));
+                window.dispatchEvent(new CustomEvent('novoPedido', { detail: novoPedido }));
+
+                localStorage.removeItem('carrinho');
+                atualizarCarrinho();
+                carregarMeusPedidos();
+
+                window.open(linkMensagem, '_blank');
+                modal.style.display = "none";
+                alert(`✅ Pedido enviado com sucesso, ${nome}! Em breve entraremos em contato.`);
+            } catch (erro) {
+                alert("❌ Erro ao enviar pedido: " + erro.message);
+                console.error(erro);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarProdutosLoja();
+            atualizarCarrinho();
+            carregarMeusPedidos();
+
+            // ✅ OUVINTE DE ALTERAÇÕES PARA SINCRONIZAR COM TODOS OS ARQUIVOS
+            db.ref('produtos').on('value', () => {
+                carregarProdutosLoja();
+                // Avisa os outros arquivos que produtos mudaram
+                window.dispatchEvent(new Event('produtosAtualizados'));
+            });
+
+            db.ref('pedidos').on('value', () => {
+                carregarMeusPedidos();
+                // Avisa os outros arquivos que pedidos mudaram
+                window.dispatchEvent(new Event('pedidosAtualizados'));
+            });
+        });
+
+        async function carregarProdutosLoja() {
+            const container = document.getElementById('lista-produtos');
+            try {
+                const produtos = await carregarDados('produtos');
+                const produtosDisponiveis = produtos.filter(p => p.disponivel === true);
+
+                if (produtosDisponiveis.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum produto cadastrado ou disponível no momento.</p>';
+                    return;
+                }
+
+                let html = '';
+                produtosDisponiveis.forEach((p, index) => {
+                    const numeroImagem = (index + 1);
+                    const linkImagem = eval(`LINK${numeroImagem}`) || 'https://i.postimg.cc/VvLMVFgG/IMG-20260518-085339-(2).webp';
+
+                    html += `
+                    <div class="border rounded-xl p-5 hover:shadow-md card-produto">
+                        <div class="codigo-produto">${String(index + 1).padStart(3, '0')}</div>
+                        <div class="moldura-produto">
+                            <img src="${linkImagem}" alt="${p.nome}" class="img-produto">
+                        </div>
+                        <div class="conteudo-produto">
+                            <div>
+                                <p class="font-bold text-lg preco-produto">${formatarMoeda(p.preco)}</p>
+                                <h3 class="font-bold nome-produto">${p.nome}</h3>
+                            </div>
+                            <div class="caixa-botoes">
+                                <button onclick="window.location.href='#meusPedidos'" class="btn-carrinho" title="Ver Meus Pedidos">
+                                    🛒
+                                </button>
+                                <button onclick="adicionarItem('${p.id}', '${p.nome.replace(/'/g, "\\'")}', ${p.preco})" class="btn-adicionar">+ Adicionar</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+
+                container.innerHTML = html;
+            } catch (erro) {
+                container.innerHTML = '<p class="text-red-500 text-center py-4">Erro ao carregar produtos.</p>';
+                console.error(erro);
+            }
+        }
+
+        function adicionarItem(id, nome, preco) {
+            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+            const itemExistente = carrinho.find(i => i.id === id);
+
+            if (itemExistente) {
+                itemExistente.quantidade += 1;
+            } else {
+                carrinho.push({ id, nome, preco, quantidade: 1 });
+            }
+
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+            atualizarCarrinho();
+            // ✅ Atualiza carrinho em todos os arquivos
+            window.dispatchEvent(new Event('carrinhoAtualizado'));
+        }
+
+        function atualizarCarrinho() {
+            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+            const container = document.getElementById('carrinho-itens');
+            const totalEl = document.getElementById('carrinho-total');
+            const nomeInfo = document.getElementById('nome-cliente-info');
+
+            if (carrinho.length === 0) {
+                container.innerHTML = 'Nenhum item adicionado ainda.';
+                totalEl.innerText = '0,00';
+                nomeInfo.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+            carrinho.forEach(item => {
+                const subtotal = item.preco * item.quantidade;
+                total += subtotal;
+                html += `
+                <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                    <div>
+                        <span class="texto-forte">${item.nome || `Produto ${item.id}`}</span>
+                        <div class="text-sm text-gray-400">
+                            <button onclick="alterarQuantidade('${item.id}', -1)" class="text-blue-400">-</button>
+                            ${item.quantidade}
+                            <button onclick="alterarQuantidade('${item.id}', 1)" class="text-blue-400">+</button>
+                            <span class="ml-2">x ${formatarMoeda(item.preco)}</span>
+                        </div>
+                    </div>
+                    <span class="valor-forte">${formatarMoeda(subtotal)}</span>
+                    <i class="fa fa-trash lixeira" onclick="removerItemTodo('${item.id}')" title="Remover item"></i>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+            totalEl.innerHTML = formatarMoeda(total);
+        }
+
+        function alterarQuantidade(id, delta) {
+            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+            const item = carrinho.find(i => i.id === id);
+            if (!item) return;
+
+            item.quantidade += delta;
+            if (item.quantidade <= 0) {
+                const index = carrinho.indexOf(item);
+                carrinho.splice(index, 1);
+            }
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+            atualizarCarrinho();
+            // ✅ Atualiza carrinho em todos os arquivos
+            window.dispatchEvent(new Event('carrinhoAtualizado'));
+        }
+
+        function removerItemTodo(id) {
+            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+            const novaLista = carrinho.filter(i => i.id !== id);
+            localStorage.setItem('carrinho', JSON.stringify(novaLista));
+            atualizarCarrinho();
+            // ✅ Atualiza carrinho em todos os arquivos
+            window.dispatchEvent(new Event('carrinhoAtualizado'));
+        }
+
+        // ✅ REGRA 2: MOSTRAR SOMENTE PEDIDOS DO CLIENTE + SINCRONIZAÇÃO GERAL
+        async function carregarMeusPedidos() {
+            try {
+                const codigoAtual = pegarOuGerarCodigoCliente();
+                const pedidos = await carregarDados('pedidos');
+                
+                const pedidosAtivos = pedidos.filter(p => 
+                    p.status !== 'Entregue' && 
+                    p.codigoCliente === codigoAtual
+                );
+
+                if(pedidosAtivos.length === 0) { 
+                    document.getElementById('lista-meus-pedidos').innerHTML = '<div class="text-center text-gray-400 py-6"><i class="fa fa-shopping-bag text-4xl mb-2"></i><p>Nenhum pedido pendente ou em andamento.</p></div>'; 
+                    return; 
+                }
+            
+                const container = document.getElementById('lista-meus-pedidos');
+                container.innerHTML = '';
+                pedidosAtivos.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'border rounded-lg p-4';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold">Pedido #${p.id.slice(-4)}</span>
+                            <span class="px-2 py-1 rounded text-sm ${p.status==='Pendente'?'bg-yellow-100 text-yellow-800':p.status==='Entregue'?'bg-green-100 text-green-800':'bg-red-100 text-red-800'}">${p.status}</span>
+                        </div>
+                        <p class="text-sm text-gray-400">Data: ${p.data}</p>
+                        <p class="text-sm text-gray-400">Cliente: ${p.cliente.nome}</p>
+                        <p class="text-sm text-gray-400">Endereço: ${p.cliente.rua}, ${p.cliente.numero} - ${p.cliente.bairro}. ${p.cliente.tipoImovel}</p>
+                        <p class="text-sm text-gray-400">Cidade: ${p.cliente.cidade}</p>
+                        <p class="font-bold text-green-600">Total: ${formatarMoeda(p.total)}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (erro) {
+                document.getElementById('lista-meus-pedidos').innerHTML = '<p class="text-red-500 text-center py-4">Erro ao carregar seus pedidos.</p>';
+                console.error(erro);
+            }
+        }
+
     </script>
 
 </body>
