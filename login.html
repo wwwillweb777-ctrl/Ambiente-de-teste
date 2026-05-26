@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Google</title>
+    <!-- ✅ LIGAÇÃO CERTA COM O ARQUIVO config.js -->
+    <script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif;}
+        body {
+            height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#ffffff;
+        }
+        /* BOTÃO ENORME DO JEITO QUE VOCÊ PEDIU */
+        .botao-google {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:20px;
+            width:700px;
+            height:140px;
+            background:#ffffff;
+            color:#3c4043;
+            border:1px solid #dadce0;
+            border-radius:12px;
+            font-size:32px;
+            font-weight:500;
+            cursor:pointer;
+            box-shadow:0 3px 8px rgba(0,0,0,0.2);
+        }
+        .botao-google img {
+            width:48px;
+            height:48px;
+        }
+        .botao-google:active {background:#f1f3f4;}
+    </style>
+</head>
+<body>
+
+    <button class="botao-google" id="btnEntrar">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
+        Entrar com o Google
+    </button>
+
+    <script>
+        firebase.initializeApp(CONFIG_FIREBASE);
+        const auth = firebase.auth();
+        const provedor = new firebase.auth.GoogleAuthProvider();
+        // ✅ OBRIGA ABRIR A TELA DE CONTAS
+        provedor.setCustomParameters({ prompt: 'select_account' });
+
+        document.getElementById("btnEntrar").addEventListener("click", () => {
+            auth.signInWithPopup(provedor)
+            .then(res => {
+                const email = res.user.email;
+                // ✅ LIGAÇÃO COM AS OUTRAS PÁGINAS
+                if(email === EMAIL_ADMIN) {
+                    window.location.href = "admin.html"; // CAMINHO CERTO
+                } else if(email === EMAIL_ATENDENTE) {
+                    window.location.href = "atendente.html"; // CAMINHO CERTO
+                } else {
+                    auth.signOut();
+                    alert("❌ Essa conta não tem permissão!");
+                }
+            })
+            .catch(erro => alert("❌ ERRO: " + erro.message));
+        });
+    </script>
+
+</body>
+</html>
