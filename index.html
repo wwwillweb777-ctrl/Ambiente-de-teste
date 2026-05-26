@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loja da Val</title>
-    <!-- ✅ CHAMADA DO ARQUIVO DE CONFIGURAÇÃO FORA DA PASTA (conforme combinado) -->
+    <!-- ✅ CHAMADA DO ARQUIVO DE CONFIGURAÇÃO FORA DA PASTA -->
     <script src="../config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
-    
-    <!-- ✅ CONEXÃO COM OS DEMAIS ARQUIVOS (removido chat.html e conexao-admin-atendente.html) -->
-    <script src="conexao-admin-atendente.html"></script>
-    <script src="admin.html"></script>
-    <script src="atendente.html"></script>
 
     <style>
         * { 
@@ -332,7 +327,7 @@
             background-color: #000000 !important;
         }
 
-        /* ✅ ESTILO PARA TELA DE LOGIN GOOGLE (só aparece na hora certa) */
+        /* ✅ ESTILO PARA TELA DE LOGIN GOOGLE */
         .tela-login-google {
             position: fixed;
             top: 0;
@@ -368,7 +363,7 @@
 </head>
 <body class="bg-gray-50">
 
-<!-- ✅ TELA DE LOGIN DO GOOGLE (ADICIONADA, NÃO ATRAPALHA NADA) -->
+<!-- ✅ TELA DE LOGIN DO GOOGLE -->
 <div id="telaGoogle" class="tela-login-google">
     <h2 class="text-yellow-500 text-xl font-bold">Verificação de Acesso</h2>
     <p class="text-white text-center px-4">Digite sua conta Google autorizada para continuar</p>
@@ -391,17 +386,17 @@ const LINK8 = "";
 const LINK9 = "";
 const LINK10 = "";
 
-// ✅ VARIÁVEIS GLOBAIS COMPARTILHADAS COM TODOS OS ARQUIVOS
+// ✅ VARIÁVEIS GLOBAIS
 window.SENHA_ATENDENTE = "Deus321";
 window.SENHA_ADMIN = "WJ@321";
 window.NUMERO_MENSAGENS = "5531990721928";
 window.db = null;
 window.firebaseConfig = null;
 
-// ✅ EMAIS AUTORIZADOS (REGRA PRINCIPAL)
+// ✅ EMAIS AUTORIZADOS
 const EMAIL_PERMITIDO_ADMIN = "williamempreiteiro007@gmail.com";
 const EMAIL_PERMITIDO_ATENDENTE = "mylenamilagre827@gmail.com";
-let destinoAcesso = ""; // Variável para saber para onde ir depois do login
+let destinoAcesso = "";
 </script>
 
     <header class="cabecalho-nosso">
@@ -425,7 +420,6 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
             <a href="index.html" class="py-3 px-4 rounded-lg bg-white/20 font-medium text-center text-white hover:bg-yellow-500/30" onclick="fecharMenu()">🏠 Loja da Val 🛍️🛒</a>
             <a href="#meusPedidos" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="fecharMenu()">📋 Meus Pedidos</a>
             
-            <!-- ✅ CONEXÃO DIRETA COM OS OUTROS ARQUIVOS (Agora redireciona para login Google após senha) -->
             <a href="#" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="verificarSenhaAtendente('atendente.html')">🔐🖥️ Caixa Registradora</a>
             <a href="#" class="py-3 px-4 rounded-lg hover:bg-white/10 transition text-center text-white" onclick="verificarSenhaAdmin('admin.html')">🔐 Administração</a>
         </nav>
@@ -519,23 +513,23 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
     </div>
 
     <script>
-        // ✅ INICIALIZAÇÃO COMPARTILHADA DO FIREBASE - AGORA PEGA TUDO DO ARQUIVO EXTERNO
+        // ✅ INICIALIZAÇÃO DO FIREBASE
         if (typeof CONFIG_FIREBASE !== 'undefined') {
             firebaseConfig = CONFIG_FIREBASE;
         } else {
-            // Aviso caso o arquivo config.js não seja encontrado
-            console.error("❌ Arquivo config.js não localizado fora da pasta! Verifique o caminho.");
+            console.error("❌ Arquivo config.js não localizado!");
         }
 
+        let auth, provedorGoogle;
         if (!firebase.apps.length && firebaseConfig) {
             firebase.initializeApp(firebaseConfig);
+            window.db = firebase.database();
+            auth = firebase.auth();
+            provedorGoogle = new firebase.auth.GoogleAuthProvider();
+            provedorGoogle.setCustomParameters({ prompt: 'select_account' });
         }
-        window.db = firebase.database();
-        const auth = firebase.auth();
-        const provedorGoogle = new firebase.auth.GoogleAuthProvider();
-        provedorGoogle.setCustomParameters({ prompt: 'select_account' }); // ✅ OBRIGA ESCOLHER CONTA
 
-        // 🆕 FUNÇÃO PARA GERAR OU PEGAR O CÓDIGO ÚNICO DO CLIENTE (COMPARTILHADA)
+        // 🆕 CÓDIGO ÚNICO DO CLIENTE
         function pegarOuGerarCodigoCliente() {
             let codigo = localStorage.getItem('codigoClienteValModas');
             if (!codigo) {
@@ -545,7 +539,7 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
             return codigo;
         }
 
-        // ✅ FUNÇÕES DE DADOS COMPARTILHADAS ENTRE TODOS OS ARQUIVOS
+        // ✅ FUNÇÕES DE DADOS
         function salvarDados(chave, dados) {
             return db.ref(chave).push(dados);
         }
@@ -571,15 +565,14 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
             document.body.style.overflow = 'auto';
         }
 
-        // ✅ FUNÇÕES DE ACESSO MODIFICADAS: SENHA CERTA → VAI PARA LOGIN GOOGLE
+        // ✅ VERIFICAÇÃO DE SENHA
         function verificarSenhaAtendente(pagina) {
             const senhaInformada = prompt("🔐 Digite a senha da Área do Caixa:");
             fecharMenu();
             if (senhaInformada === null) return;
             
             if (senhaInformada === SENHA_ATENDENTE) {
-                // ✅ SENHA CERTA: AGORA VAI PARA LOGIN GOOGLE
-                destinoAcesso = pagina; // Salva para onde ir depois
+                destinoAcesso = pagina;
                 document.getElementById('telaGoogle').style.display = 'flex';
             } else {
                 alert("❌ Senha incorreta!");
@@ -592,22 +585,20 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
             if (senhaInformada === null) return;
             
             if (senhaInformada === SENHA_ADMIN) {
-                // ✅ SENHA CERTA: AGORA VAI PARA LOGIN GOOGLE
-                destinoAcesso = pagina; // Salva para onde ir depois
+                destinoAcesso = pagina;
                 document.getElementById('telaGoogle').style.display = 'flex';
             } else {
                 alert("❌ Senha incorreta!");
             }
         }
 
-        // ✅ FUNÇÃO DE LOGIN GOOGLE E LIBERAÇÃO
+        // ✅ LOGIN GOOGLE FUNCIONANDO
         document.getElementById('btnGoogleEntrar').addEventListener('click', () => {
             auth.signInWithPopup(provedorGoogle)
             .then(result => {
                 const emailUsuario = result.user.email;
                 let liberado = false;
 
-                // ✅ REGRAS DE LIBERAÇÃO POR EMAIL
                 if(destinoAcesso === 'admin.html' && emailUsuario === EMAIL_PERMITIDO_ADMIN) {
                     liberado = true;
                 }
@@ -616,7 +607,6 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
                 }
 
                 if(liberado) {
-                    // ✅ LIBEROU: ENVIA DADOS E ENTRA
                     localStorage.setItem('dadosConexao', JSON.stringify({ 
                         origem: 'index', 
                         acesso: destinoAcesso.includes('admin') ? 'admin' : 'atendente', 
@@ -625,7 +615,6 @@ let destinoAcesso = ""; // Variável para saber para onde ir depois do login
                     }));
                     window.location.href = destinoAcesso;
                 } else {
-                    // ❌ EMAIL ERRADO
                     document.getElementById('avisoErroGoogle').style.display = 'block';
                     auth.signOut();
                 }
@@ -682,7 +671,6 @@ Trabalhamos com total transparência e responsabilidade ☺️. Você vai recebe
 
             const linkMensagem = `https://wa.me/${NUMERO_MENSAGENS}?text=${encodeURIComponent(mensagem)}`;
 
-            // ✅ REGRA 1: NÃO SALVAR WHATSAPP NO BANCO
             const dadosCliente = {
                 nome: nome,
                 cidade: cidade,
@@ -704,8 +692,6 @@ Trabalhamos com total transparência e responsabilidade ☺️. Você vai recebe
 
             try {
                 await salvarDados('pedidos', novoPedido);
-
-                // ✅ SINCRONIZA COM TODOS OS ARQUIVOS
                 localStorage.setItem('ultimoPedido', JSON.stringify(novoPedido));
                 window.dispatchEvent(new CustomEvent('novoPedido', { detail: novoPedido }));
 
@@ -723,22 +709,21 @@ Trabalhamos com total transparência e responsabilidade ☺️. Você vai recebe
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            carregarProdutosLoja();
-            atualizarCarrinho();
-            carregarMeusPedidos();
-
-            // ✅ OUVINTE DE ALTERAÇÕES PARA SINCRONIZAR COM TODOS OS ARQUIVOS
-            db.ref('produtos').on('value', () => {
+            if(db) {
                 carregarProdutosLoja();
-                // Avisa os outros arquivos que produtos mudaram
-                window.dispatchEvent(new Event('produtosAtualizados'));
-            });
-
-            db.ref('pedidos').on('value', () => {
+                atualizarCarrinho();
                 carregarMeusPedidos();
-                // Avisa os outros arquivos que pedidos mudaram
-                window.dispatchEvent(new Event('pedidosAtualizados'));
-            });
+
+                db.ref('produtos').on('value', () => {
+                    carregarProdutosLoja();
+                    window.dispatchEvent(new Event('produtosAtualizados'));
+                });
+
+                db.ref('pedidos').on('value', () => {
+                    carregarMeusPedidos();
+                    window.dispatchEvent(new Event('pedidosAtualizados'));
+                });
+            }
         });
 
         async function carregarProdutosLoja() {
@@ -797,7 +782,6 @@ Trabalhamos com total transparência e responsabilidade ☺️. Você vai recebe
 
             localStorage.setItem('carrinho', JSON.stringify(carrinho));
             atualizarCarrinho();
-            // ✅ Atualiza carrinho em todos os arquivos
             window.dispatchEvent(new Event('carrinhoAtualizado'));
         }
 
@@ -851,7 +835,6 @@ Trabalhamos com total transparência e responsabilidade ☺️. Você vai recebe
             }
             localStorage.setItem('carrinho', JSON.stringify(carrinho));
             atualizarCarrinho();
-            // ✅ Atualiza carrinho em todos os arquivos
             window.dispatchEvent(new Event('carrinhoAtualizado'));
         }
 
@@ -860,11 +843,10 @@ Trabalhamos com total transparência e responsabilidade ☺️. Você vai recebe
             const novaLista = carrinho.filter(i => i.id !== id);
             localStorage.setItem('carrinho', JSON.stringify(novaLista));
             atualizarCarrinho();
-            // ✅ Atualiza carrinho em todos os arquivos
             window.dispatchEvent(new Event('carrinhoAtualizado'));
         }
 
-        // ✅ REGRA 2: MOSTRAR SOMENTE PEDIDOS DO CLIENTE + SINCRONIZAÇÃO GERAL
+        // ✅ MOSTRAR SOMENTE PEDIDOS DO CLIENTE
         async function carregarMeusPedidos() {
             try {
                 const codigoAtual = pegarOuGerarCodigoCliente();
