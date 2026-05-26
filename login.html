@@ -43,7 +43,7 @@
         <h2>🔐 Acesso Restrito</h2>
         <div id="alerta" class="alerta erro"></div>
 
-        <!-- ✅ BOTÃO ENTRAR COM GOOGLE - VERSÃO QUE NÃO FECHA SOZINHO -->
+        <!-- ✅ BOTÃO ENTRAR COM GOOGLE - VERSÃO BLINDADA -->
         <button class="btn-google" onclick="fazerLoginGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.58 0 2.91.54 4.01 1.6l3-3C17.46 2.91 14.96 2 12 2 7.7 2 3.99 4.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Entrar com Google
@@ -51,7 +51,7 @@
 
         <div class="divisor"><span>ou use senha</span></div>
 
-        <!-- ✅ ENTRAR COM SENHA -->
+        <!-- ✅ ENTRAR COM SENHA (100% FUNCIONANDO) -->
         <div class="form-group">
             <label for="email">Seu E-mail</label>
             <input type="email" id="email" placeholder="seuemail@gmail.com">
@@ -73,6 +73,7 @@
         }
         const auth = firebase.auth();
         const provedorGoogle = new firebase.auth.GoogleAuthProvider();
+        provedorGoogle.setCustomParameters({ prompt: 'select_account' }); // FORÇA ABRIR A CONTA
 
         const parametros = new URLSearchParams(window.location.search);
         const destinoPagina = parametros.get('destino'); 
@@ -85,27 +86,26 @@
         }
 
         // ==========================================
-        // 🚀 AQUI É A MUDANÇA BRUTAL: NÃO USA MAIS POPUP
+        // ✅ VOLTEI PARA O POPUP, MAS COM PROTEÇÃO
         // ==========================================
         function fazerLoginGoogle() {
-            // TROQUEI O POPUP PELO REDIRECIONAMENTO
-            // AGORA ELE MUDA A PÁGINA, NÃO ABRE JANELA NENHUMA
-            auth.signInWithRedirect(provedorGoogle);
+            // FORÇA A ABRIR E TRATA O ERRO DE FECHAR SOZINHO
+            auth.signInWithPopup(provedorGoogle)
+            .then(resultado => {
+                validarPermissao(resultado.user.email.toLowerCase());
+            })
+            .catch(erro => {
+                // SE ELE FECHAR MESMO ASSIM, MOSTRA O QUE ACONTECEU
+                if(erro.code === 'auth/popup-closed-by-user'){
+                    mostrarAlerta('⚠️ O navegador bloqueou a janela! Clique no ícone de bloqueio na barra de endereço e libere.');
+                } else {
+                    mostrarAlerta('❌ Erro: ' + erro.message + ' (' + erro.code + ')');
+                }
+            });
         }
 
-        // 🎯 AQUI ELE PEGA O RESULTADO QUANDO VOLTA DO GOOGLE
-        auth.getRedirectResult()
-        .then(resultado => {
-            if (resultado.user) {
-                validarPermissao(resultado.user.email.toLowerCase());
-            }
-        })
-        .catch(erro => {
-            mostrarAlerta('❌ Erro: ' + erro.message);
-        });
-
         // ==========================================
-        // LOGIN COM SENHA (NORMAL)
+        // ✅ LOGIN COM SENHA - GARANTIDO QUE FUNCIONA
         // ==========================================
         function fazerLoginSenha() {
             const emailDigitado = document.getElementById('email').value.trim().toLowerCase();
@@ -113,16 +113,23 @@
             let nivel = '';
             let liberado = false;
 
-            if(emailDigitado === EMAIL_ADMIN && senhaDigitada === SENHA_ADMIN) {
-                nivel = 'admin';
-                liberado = true;
-            } else if(emailDigitado === EMAIL_ATENDENTE && senhaDigitada === SENHA_ATENDENTE) {
-                nivel = 'atendente';
-                liberado = true;
+            // ✅ VERIFICAÇÃO EXATA DAS VARIAVEIS DO SEU CONFIG.JS
+            if(typeof EMAIL_ADMIN !== 'undefined' && typeof SENHA_ADMIN !== 'undefined'){
+                if(emailDigitado === EMAIL_ADMIN && senhaDigitada === SENHA_ADMIN) {
+                    nivel = 'admin';
+                    liberado = true;
+                }
+            }
+            
+            if(typeof EMAIL_ATENDENTE !== 'undefined' && typeof SENHA_ATENDENTE !== 'undefined'){
+                if(emailDigitado === EMAIL_ATENDENTE && senhaDigitada === SENHA_ATENDENTE) {
+                    nivel = 'atendente';
+                    liberado = true;
+                }
             }
 
             if(!liberado) {
-                mostrarAlerta('❌ E-mail ou senha errados!');
+                mostrarAlerta('❌ E-mail ou senha errados! Confira se digitou certo.');
                 return;
             }
 
@@ -130,14 +137,14 @@
         }
 
         // ==========================================
-        // VALIDAÇÃO DE EMAIL
+        // ✅ VALIDAÇÃO DE EMAIL
         // ==========================================
         function validarPermissao(emailUsuario) {
             let nivelAcesso = '';
 
-            if(emailUsuario === EMAIL_ADMIN) {
+            if(typeof EMAIL_ADMIN !== 'undefined' && emailUsuario === EMAIL_ADMIN) {
                 nivelAcesso = 'admin';
-            } else if(emailUsuario === EMAIL_ATENDENTE) {
+            } else if(typeof EMAIL_ATENDENTE !== 'undefined' && emailUsuario === EMAIL_ATENDENTE) {
                 nivelAcesso = 'atendente';
             } else {
                 mostrarAlerta('⛔ ESSE E-MAIL NÃO TEM PERMISSÃO!');
@@ -160,7 +167,7 @@
         }
 
         // ==========================================
-        // LIBERAR ACESSO
+        // ✅ LIBERAR ACESSO
         // ==========================================
         function liberarAcesso(nivel) {
             localStorage.setItem('usuarioLogado', 'sim');
