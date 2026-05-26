@@ -1,0 +1,12 @@
+const CONFIG_FIREBASE = {
+  apiKey: "AIzaSyAsrFAwToc89j32XX0juvW7C7VYgpGcdiE",
+  authDomain: "ambiente-de-teste-b966a.firebaseapp.com",
+  databaseURL: "https://ambiente-de-teste-b966a-default-rtdb.firebaseio.com",
+  projectId: "ambiente-de-teste-b966a",
+  storageBucket: "ambiente-de-teste-b966a.firebasestorage.app",
+  messagingSenderId: "878588656595",
+  appId: "1:878588656595:web:46596b60a49e840f4a8d26"
+};
+
+const EMAIL_ADMIN = "williamempreiteiro007@gmail.com";
+const EMAIL_ATENDENTE = "mylenamilagre827@gmail.com";
