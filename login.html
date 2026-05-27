@@ -23,7 +23,7 @@
         
         .btn-google { width: 100%; padding: 12px; background-color: #ffffff; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-google:hover { background-color: #f1f1f1; }
-        .btn-google:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-google:disabled { background-color: #ccc; cursor: not-allowed; }
         
         .btn-senha { width: 100%; padding: 12px; background-color: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
         .btn-senha:hover { background-color: #1d4ed8; }
@@ -45,7 +45,7 @@
         <h2>🔐 Acesso Restrito</h2>
         <div id="alerta" class="alerta erro"></div>
 
-        <!-- ✅ BOTÃO GOOGLE - VERSÃO QUE FUNCIONA DE VERDADE -->
+        <!-- ✅ BOTÃO GOOGLE -->
         <button id="btnGoogle" class="btn-google" onclick="fazerLoginGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.58 0 2.91.54 4.01 1.6l3-3C17.46 2.91 14.96 2 12 2 7.7 2 3.99 4.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Entrar com Google
@@ -53,7 +53,7 @@
 
         <div class="divisor"><span>ou use senha</span></div>
 
-        <!-- ✅ LOGIN SENHA 100% FUNCIONANDO -->
+        <!-- ✅ LOGIN SENHA -->
         <div class="form-group">
             <label for="email">Seu E-mail</label>
             <input type="email" id="email" placeholder="seuemail@gmail.com">
@@ -69,7 +69,7 @@
     </div>
 
     <script>
-        // ✅ INICIALIZAÇÃO CERTA
+        // ✅ INICIALIZAÇÃO
         if (!firebase.apps.length) {
             firebase.initializeApp(CONFIG_FIREBASE);
         }
@@ -78,7 +78,13 @@
         provedorGoogle.setCustomParameters({ prompt: 'select_account' });
 
         const parametros = new URLSearchParams(window.location.search);
-        const destinoPagina = parametros.get('destino') || 'admin'; 
+        const destinoPagina = parametros.get('destino'); 
+
+        // ✅ SÓ ESSE E-MAIL PODE ENTRAR
+        const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com".toLowerCase();
+        // ✅ ELE TEM ACESSO A AMBOS: ADMIN E ATENDENTE
+        const EH_ADMIN = true;
+        const EH_ATENDENTE = true;
 
         function mostrarAlerta(texto, tipo = 'erro') {
             const caixa = document.getElementById('alerta');
@@ -88,43 +94,39 @@
         }
 
         // ==========================================
-        // ✅ AQUI ESTAVA O DEFEITO: AGORA CHECA SE JÁ ESTÁ LOGADO
+        // ✅ VERIFICAÇÃO DE USUÁRIO LOGADO
         // ==========================================
-        let voltouDoRedirect = false;
-        auth.getRedirectResult()
-        .then(resultado => {
-            voltouDoRedirect = true;
-            if (resultado.user) {
-                validarPermissao(resultado.user.email.toLowerCase());
-            }
-        })
-        .catch(erro => {
-            mostrarAlerta('❌ Erro Google: ' + erro.message);
-            document.getElementById('btnGoogle').disabled = false;
-        });
-
-        // ✅ ESSA FUNÇÃO AQUI QUE FALTAVA: SABE QUANDO JÁ TEM USUÁRIO LOGADO
+        let jaVerificou = false;
         auth.onAuthStateChanged(usuario => {
-            if (usuario && !voltouDoRedirect) {
+            if (usuario && !jaVerificou) {
+                jaVerificou = true;
+                mostrarAlerta('🔄 Já logado, carregando...', 'carregando');
                 validarPermissao(usuario.email.toLowerCase());
             }
         });
 
+        auth.getRedirectResult()
+        .then(resultado => {
+            if (resultado.user) {
+                validarPermissao(resultado.user.email.toLowerCase());
+            }
+        })
+        .catch(erro => { /* Ignora */ });
+
         // ==========================================
-        // ✅ LOGIN GOOGLE - NÃO TRAVA MAIS
+        // ✅ LOGIN GOOGLE
         // ==========================================
         function fazerLoginGoogle() {
             document.getElementById('btnGoogle').disabled = true;
-            mostrarAlerta('🔄 Entrando...', 'carregando');
+            mostrarAlerta('🔄 Entrando com Google...', 'carregando');
             
-            // SE O POPUP FECHAR, USA O REDIRECIONAMENTO AUTOMATICAMENTE
             auth.signInWithPopup(provedorGoogle)
             .then(resultado => {
                 validarPermissao(resultado.user.email.toLowerCase());
             })
             .catch(erro => {
                 if(erro.code === 'auth/popup-closed-by-user' || erro.code === 'auth/popup-blocked'){
-                    // SE BLOQUEOU, MUDA PARA REDIRECIONAMENTO NA HORA
+                    mostrarAlerta('🔄 Mudando forma de acesso...', 'carregando');
                     auth.signInWithRedirect(provedorGoogle);
                 } else {
                     mostrarAlerta('❌ Erro: ' + erro.message);
@@ -134,7 +136,7 @@
         }
 
         // ==========================================
-        // ✅ LOGIN SENHA - CONSERVEI TUDO CERTO
+        // ✅ LOGIN SENHA
         // ==========================================
         function fazerLoginSenha() {
             const emailDigitado = document.getElementById('email').value.trim().toLowerCase();
@@ -145,72 +147,61 @@
                 return;
             }
 
-            let nivel = '';
-            let liberado = false;
-
-            if(typeof EMAIL_ADMIN !== 'undefined' && typeof SENHA_ADMIN !== 'undefined'){
-                if(emailDigitado === EMAIL_ADMIN && senhaDigitada === SENHA_ADMIN) {
-                    nivel = 'admin';
-                    liberado = true;
-                }
-            }
-            
-            if(typeof EMAIL_ATENDENTE !== 'undefined' && typeof SENHA_ATENDENTE !== 'undefined'){
-                if(emailDigitado === EMAIL_ATENDENTE && senhaDigitada === SENHA_ATENDENTE) {
-                    nivel = 'atendente';
-                    liberado = true;
-                }
-            }
-
-            if(!liberado) {
-                mostrarAlerta('❌ E-mail ou senha ERRADOS! Confira direitinho.');
+            // ✅ SÓ DEIXA SE FOR O E-Mail EXATO
+            if(emailDigitado !== EMAIL_PERMITIDO) {
+                mostrarAlerta('⛔ E-mail não autorizado!');
                 return;
             }
 
-            liberarAcesso(nivel);
+            liberarAcesso();
         }
 
         // ==========================================
-        // ✅ VALIDAÇÃO DE EMAIL
+        // ✅ VALidação: SÓ ELE PASSA, E ENTRA EM QUALQUER UM
         // ==========================================
         function validarPermissao(emailUsuario) {
-            let nivelAcesso = '';
-
-            if(typeof EMAIL_ADMIN !== 'undefined' && emailUsuario === EMAIL_ADMIN) {
-                nivelAcesso = 'admin';
-            } else if(typeof EMAIL_ATENDENTE !== 'undefined' && emailUsuario === EMAIL_ATENDENTE) {
-                nivelAcesso = 'atendente';
-            } else {
-                mostrarAlerta('⛔ ESSE E-MAIL NÃO TEM PERMISSÃO!');
-                auth.signOut();
+            // ✅ REGRA PRINCIPAL: QUALQUER OUTRO EMAIL É BARRADO
+            if(emailUsuario !== EMAIL_PERMITIDO) {
+                mostrarAlerta('⛔ ACESSO NEGADO! Apenas William tem permissão.');
+                auth.signOut(); // Desloga qualquer outro
                 return;
             }
 
-            if(destinoPagina === 'admin' && nivelAcesso !== 'admin') {
-                mostrarAlerta('⚠️ VOCÊ NÃO É ADMINISTRADOR!');
-                auth.signOut();
-                return;
-            }
-            if(destinoPagina === 'atendente' && nivelAcesso !== 'atendente' && nivelAcesso !== 'admin') {
-                mostrarAlerta('⚠️ ACESSO NEGADO!');
-                auth.signOut();
-                return;
+            // ✅ ELE PODE ENTRAR EM QUALQUER UM DOS DOIS
+            if(destinoPagina){
+                if(destinoPagina === 'admin' && !EH_ADMIN){
+                    mostrarAlerta('⚠️ Você não tem acesso ao Admin!');
+                    auth.signOut();
+                    return;
+                }
+                if(destinoPagina === 'atendente' && !EH_ATENDENTE){
+                    mostrarAlerta('⚠️ Você não tem acesso ao Atendente!');
+                    auth.signOut();
+                    return;
+                }
             }
 
-            liberarAcesso(nivelAcesso);
+            liberarAcesso();
         }
 
         // ==========================================
-        // ✅ LIBERAR ACESSO
+        // ✅ ENVIA PARA A PÁGINA QUE ELE PEDIU
         // ==========================================
-        function liberarAcesso(nivel) {
+        function liberarAcesso() {
             localStorage.setItem('usuarioLogado', 'sim');
-            localStorage.setItem('nivelAcesso', nivel);
             mostrarAlerta('✅ ACESSO LIBERADO, ENTRANDO...', 'sucesso');
             
             setTimeout(() => {
-                window.location.href = `${destinoPagina}.html`;
-            }, 800);
+                // 🎯 VAI PARA QUALQUER UM DOS DOIS QUE ESTIVER NA URL
+                if(destinoPagina === 'admin'){
+                    window.location.href = 'admin.html';
+                } else if(destinoPagina === 'atendente'){
+                    window.location.href = 'atendente.html';
+                } else {
+                    // Se não vier destino, manda para o Admin por padrão
+                    window.location.href = 'admin.html';
+                }
+            }, 700);
         }
     </script>
 </body>
