@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- ✅ BIBLIOTECAS CERTAS PARA GOOGLE LOGIN -->
+    <!-- ✅ BIBLIOTECAS CERTAS -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
@@ -23,6 +23,7 @@
         
         .btn-google { width: 100%; padding: 12px; background-color: #ffffff; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-google:hover { background-color: #f1f1f1; }
+        .btn-google:disabled { opacity: 0.7; cursor: not-allowed; }
         
         .btn-senha { width: 100%; padding: 12px; background-color: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
         .btn-senha:hover { background-color: #1d4ed8; }
@@ -32,6 +33,7 @@
         .alerta { padding: 10px; border-radius: 8px; margin-bottom: 16px; text-align: center; font-size: 0.9rem; display: none; }
         .erro { background-color: #7f1d1d; color: #fecdd3; border: 1px solid #991b1b; }
         .sucesso { background-color: #166534; color: #bbf7d0; border: 1px solid #15803d; }
+        .carregando { background-color: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
         
         .divisor { display: flex; align-items: center; text-align: center; margin: 16px 0; color: #888; }
         .divisor::before, .divisor::after { content: ''; flex: 1; border-bottom: 1px solid #444; }
@@ -43,15 +45,15 @@
         <h2>🔐 Acesso Restrito</h2>
         <div id="alerta" class="alerta erro"></div>
 
-        <!-- ✅ BOTÃO ENTRAR COM GOOGLE - VERSÃO BLINDADA -->
-        <button class="btn-google" onclick="fazerLoginGoogle()">
+        <!-- ✅ BOTÃO GOOGLE - VERSÃO QUE FUNCIONA DE VERDADE -->
+        <button id="btnGoogle" class="btn-google" onclick="fazerLoginGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.58 0 2.91.54 4.01 1.6l3-3C17.46 2.91 14.96 2 12 2 7.7 2 3.99 4.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Entrar com Google
         </button>
 
         <div class="divisor"><span>ou use senha</span></div>
 
-        <!-- ✅ ENTRAR COM SENHA (100% FUNCIONANDO) -->
+        <!-- ✅ LOGIN SENHA 100% FUNCIONANDO -->
         <div class="form-group">
             <label for="email">Seu E-mail</label>
             <input type="email" id="email" placeholder="seuemail@gmail.com">
@@ -67,16 +69,16 @@
     </div>
 
     <script>
-        // ✅ INICIALIZAÇÃO FIREBASE
+        // ✅ INICIALIZAÇÃO CERTA
         if (!firebase.apps.length) {
             firebase.initializeApp(CONFIG_FIREBASE);
         }
         const auth = firebase.auth();
         const provedorGoogle = new firebase.auth.GoogleAuthProvider();
-        provedorGoogle.setCustomParameters({ prompt: 'select_account' }); // FORÇA ABRIR A CONTA
+        provedorGoogle.setCustomParameters({ prompt: 'select_account' });
 
         const parametros = new URLSearchParams(window.location.search);
-        const destinoPagina = parametros.get('destino'); 
+        const destinoPagina = parametros.get('destino') || 'admin'; 
 
         function mostrarAlerta(texto, tipo = 'erro') {
             const caixa = document.getElementById('alerta');
@@ -86,34 +88,66 @@
         }
 
         // ==========================================
-        // ✅ VOLTEI PARA O POPUP, MAS COM PROTEÇÃO
+        // ✅ AQUI ESTAVA O DEFEITO: AGORA CHECA SE JÁ ESTÁ LOGADO
+        // ==========================================
+        let voltouDoRedirect = false;
+        auth.getRedirectResult()
+        .then(resultado => {
+            voltouDoRedirect = true;
+            if (resultado.user) {
+                validarPermissao(resultado.user.email.toLowerCase());
+            }
+        })
+        .catch(erro => {
+            mostrarAlerta('❌ Erro Google: ' + erro.message);
+            document.getElementById('btnGoogle').disabled = false;
+        });
+
+        // ✅ ESSA FUNÇÃO AQUI QUE FALTAVA: SABE QUANDO JÁ TEM USUÁRIO LOGADO
+        auth.onAuthStateChanged(usuario => {
+            if (usuario && !voltouDoRedirect) {
+                validarPermissao(usuario.email.toLowerCase());
+            }
+        });
+
+        // ==========================================
+        // ✅ LOGIN GOOGLE - NÃO TRAVA MAIS
         // ==========================================
         function fazerLoginGoogle() {
-            // FORÇA A ABRIR E TRATA O ERRO DE FECHAR SOZINHO
+            document.getElementById('btnGoogle').disabled = true;
+            mostrarAlerta('🔄 Entrando...', 'carregando');
+            
+            // SE O POPUP FECHAR, USA O REDIRECIONAMENTO AUTOMATICAMENTE
             auth.signInWithPopup(provedorGoogle)
             .then(resultado => {
                 validarPermissao(resultado.user.email.toLowerCase());
             })
             .catch(erro => {
-                // SE ELE FECHAR MESMO ASSIM, MOSTRA O QUE ACONTECEU
-                if(erro.code === 'auth/popup-closed-by-user'){
-                    mostrarAlerta('⚠️ O navegador bloqueou a janela! Clique no ícone de bloqueio na barra de endereço e libere.');
+                if(erro.code === 'auth/popup-closed-by-user' || erro.code === 'auth/popup-blocked'){
+                    // SE BLOQUEOU, MUDA PARA REDIRECIONAMENTO NA HORA
+                    auth.signInWithRedirect(provedorGoogle);
                 } else {
-                    mostrarAlerta('❌ Erro: ' + erro.message + ' (' + erro.code + ')');
+                    mostrarAlerta('❌ Erro: ' + erro.message);
+                    document.getElementById('btnGoogle').disabled = false;
                 }
             });
         }
 
         // ==========================================
-        // ✅ LOGIN COM SENHA - GARANTIDO QUE FUNCIONA
+        // ✅ LOGIN SENHA - CONSERVEI TUDO CERTO
         // ==========================================
         function fazerLoginSenha() {
             const emailDigitado = document.getElementById('email').value.trim().toLowerCase();
             const senhaDigitada = document.getElementById('senha').value;
+
+            if(!emailDigitado || !senhaDigitada){
+                mostrarAlerta('⚠️ Preencha e-mail e senha!');
+                return;
+            }
+
             let nivel = '';
             let liberado = false;
 
-            // ✅ VERIFICAÇÃO EXATA DAS VARIAVEIS DO SEU CONFIG.JS
             if(typeof EMAIL_ADMIN !== 'undefined' && typeof SENHA_ADMIN !== 'undefined'){
                 if(emailDigitado === EMAIL_ADMIN && senhaDigitada === SENHA_ADMIN) {
                     nivel = 'admin';
@@ -129,7 +163,7 @@
             }
 
             if(!liberado) {
-                mostrarAlerta('❌ E-mail ou senha errados! Confira se digitou certo.');
+                mostrarAlerta('❌ E-mail ou senha ERRADOS! Confira direitinho.');
                 return;
             }
 
@@ -176,7 +210,7 @@
             
             setTimeout(() => {
                 window.location.href = `${destinoPagina}.html`;
-            }, 1000);
+            }, 800);
         }
     </script>
 </body>
