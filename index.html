@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loja da Val</title>
-    <!-- ✅ ORDEM CORRETA: PRIMEIRO O CONFIG, DEPOIS O FIREBASE -->
     <script src="config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
 
     <script>
-        // ✅ CONFIGURAÇÃO DO TAILWIND PARA COMBINAR COM SEU TEMA
         tailwind.config = {
             theme: {
                 extend: {
@@ -24,9 +22,7 @@
                         cinzaclaro: '#374151',
                         azulbotao: '#2563eb',
                     },
-                    fontFamily: {
-                        poppins: ['Poppins', 'sans-serif'],
-                    },
+                    fontFamily: { poppins: ['Poppins', 'sans-serif'] }
                 }
             }
         }
@@ -41,392 +37,26 @@
     </style>
 
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            font-family: 'Poppins', sans-serif; 
-            scroll-behavior: smooth; 
-        }
-
-        body { 
-            line-height: 1.6; 
-            background-color: #000000 !important; 
-            color: #e6e6e6 !important; 
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
+        body { background-color: #000000 !important; color: #e6e6e6 !important; line-height: 1.6; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-        .shadow { box-shadow: 0 4px 6px -1px rgba(255,255,255,0.1), 0 2px 4px -1px rgba(255,255,255,0.06); }
-        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(255,255,255,0.1), 0 4px 6px -2px rgba(255,255,255,0.05); }
-        .rounded-xl { border-radius: 0.75rem; } .rounded-2xl { border-radius: 1rem; }
-        .transition { transition: all 0.2s ease; }
-
-        .bg-blue-50 { background-color: #1a1a1a !important; } 
-        .bg-green-50 { background-color: #1a1a1a !important; } 
-        .bg-purple-50 { background-color: #1a1a1a !important; }
-        .bg-yellow-100 { background-color: #2b2b2b !important; } 
-        .bg-green-100 { background-color: #1a1a1a !important; } 
-        .bg-blue-100 { background-color: #1a1a1a !important; } 
-        .bg-red-100 { background-color: #2b2b2b !important; }
-
-        .text-yellow-800 { color: #FFD700 !important; } 
-        .text-green-800 { color: #e6e6e6 !important; } 
-        .text-blue-800 { color: #e6e6e6 !important; } 
-        .text-red-800 { color: #e6e6e6 !important; }
-        h1, h2, h3, h4, h5, h6 { color: #FFD700 !important; font-weight: 600; }
-        p, span, div, label, input, select, textarea { color: #e6e6e6 !important; } 
-
-        a { text-decoration: none; } nav a { transition: all 0.2s; }
-        nav a:hover { background-color: rgba(255, 215, 0, 0.15) !important; color: #FFD700 !important; }
-
-        ::-webkit-scrollbar { width: 6px; } 
-        ::-webkit-scrollbar-track { background: #1a1a1a; } 
-        ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
-
-        .lixeira {
-            color: #ef4444 !important;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 8px;
-            transition: color 0.2s;
-        }
-        .lixeira:hover {
-            color: #dc2626 !important;
-        }
-
-        .caixa-botoes {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 8px;
-            margin-top: -5% !important;
-            align-self: flex-end;
-        }
-
-        .btn-carrinho {
-            background-color: #2563eb !important;
-            color: #ffffff !important;
-            width: 70px;
-            height: 55px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2.2px solid #ffffff !important;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            font-size: 22px !important;
-            box-shadow: 0 2px 4px rgba(255,255,255,0.1);
-        }
-        .btn-carrinho:active {
-            background-color: #1d4ed8 !important;
-            transform: scale(0.95);
-        }
-
-        .btn-adicionar {
-            background-color: #2563eb !important;
-            color: #ffffff !important;
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 2.2px solid #ffffff !important;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            font-size: 0.9rem;
-            font-weight: 500;
-            box-shadow: 0 2px 4px rgba(255,255,255,0.1);
-            margin-top: 4% !important;
-        }
-        .btn-adicionar:active {
-            background-color: #dc2626 !important;
-            color: #ffffff !important;
-            transform: scale(0.96);
-        }
-
-        .btn-qtd {
-            background-color: #374151 !important;
-            color: #ffffff !important;
-            width: 26px;
-            height: 26px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            font-weight: bold;
-        }
-        .btn-qtd:active {
-            background-color: #dc2626 !important;
-            color: #ffffff !important;
-        }
-
-        .btn-finalizar {
-            background-color: #2563eb !important;
-            color: #ffffff !important;
-            padding: 12px;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            border: none;
-            transition: all 0.2s ease;
-            width: 100%;
-            font-size: 1rem;
-        }
-        .btn-finalizar:hover {
-            background-color: #1d4ed8 !important;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-
-        .texto-forte {
-            color: #e6e6e6 !important; 
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .valor-forte {
-            color: #e6e6e6 !important; 
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .nome-produto {
-            font-size: 90% !important;
-            font-weight: bold !important;
-            color: #e6e6e6 !important; 
-            margin: -0% 0 0 0 !important;
-            align-self: flex-start;
-            line-height: 1.3;
-        }
-
-        .preco-produto {
-            font-size: 1.54rem !important;
-            font-weight: bold !important;
-            margin: 1% 0 0 0 !important;
-            align-self: flex-start;
-        }
-        .preco-produto span.dourado {
-            color: #FFD700 !important;
-        }
-        .preco-produto span.branco {
-            color: #e6e6e6 !important; 
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.85) !important;
-            padding-top: 60px;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-conteudo {
-            background-color: #1f2937 !important;
-            margin: 5% auto;
-            padding: 24px;
-            border: 1px solid #4b5563 !important;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-
-        .fechar {
-            color: #9ca3af !important; 
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            transition: color 0.2s;
-        }
-
-        .fechar:hover,
-        .fechar:focus {
-            color: #FFD700 !important;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            color: #d1d5db !important; 
-            font-size: 0.95rem;
-        }
-
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #4b5563 !important;
-            border-radius: 8px;
-            font-size: 1rem;
-            background-color: #374151 !important;
-            color: #f3f4f6 !important;
-            transition: border-color 0.2s;
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #2563eb !important;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn-enviar {
-            background-color: #2563eb !important;
-            color: white !important;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            margin-top: 8px;
-        }
-
-        .btn-enviar:hover {
-            background-color: #1d4ed8 !important;
-            transform: translateY(-1px);
-        }
-
-        .cabecalho-nosso {
-            background: url('https://i.postimg.cc/N0pFG0Zx/IMG-20260522-055852.webp') no-repeat center center;
-            background-color: #005bcc;
-            background-size: cover;
-            background-position: center;
-            height: 180px;
-            width: 100%;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            padding-left: 1rem;
-            border-bottom: 2px solid rgba(255, 215, 0, 0.2);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .moldura-produto {
-            width: 100% !important;
-            aspect-ratio: 1 / 1.4 !important;
-            border-radius: 12px 12px 12px 12px !important;
-            background-color: #ffffff !important;
-            overflow: hidden !important;
-            border: none !important;
-            box-sizing: border-box !important;
-            position: relative;
-            margin-top: 15% !important; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .img-produto {
-            width: 100% !important;
-            height: 125% !important;
-            object-fit: contain !important; 
-            object-position: center !important;
-            display: block !important;
-            border-radius: 12px !important;
-            background-color: #ffffff !important;
-            transition: transform 0.3s;
-        }
-        .card-produto:hover .img-produto {
-            transform: scale(1.05);
-        }
-
-        .codigo-produto {
-            font-size: 0.86rem !important;
-            font-weight: 600 !important;
-            color: #FFD700 !important;
-            letter-spacing: 1px !important;
-            position: static !important;
-            background: transparent !important;
-            padding: 0 !important;
-            margin-bottom: 8px !important;
-            z-index: 2;
-        }
-
-        .bg-gray-50 {
-            background-color: #000000 !important;
-        }
-
-        .card-produto {
-            position: relative;
-            overflow: hidden;
-            border-radius: 16px !important;
-            background-color: #111111 !important;
-            padding: 1.2rem !important;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #222222 !important;
-            transition: all 0.3s !important;
-            margin-bottom: 1rem;
-        }
-        .card-produto:hover {
-            border-color: #FFD70040 !important;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
-            transform: translateY(-2px);
-        }
-
-        .conteudo-produto {
-            padding: 16px 0 0 0 !important;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            flex: 1;
-            margin-top: 0 !important;
-            background-color: transparent !important;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-        }
-
-        /* ✅ ESTILO DOS BOTÕES DO MENU ORIGINAIS */
-        .menu-link {
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-            text-align: center;
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-        .menu-link-principal {
-            background-color: rgba(37, 99, 235, 0.2);
-            color: #ffffff;
-            font-weight: 500;
-        }
-        .menu-link-principal:hover {
-            background-color: rgba(255, 215, 0, 0.3);
-        }
-        .menu-link-admin {
-            background-color: rgba(255, 215, 0, 0.1);
-            color: #FFD700;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            font-weight: 500;
-        }
-        .menu-link-admin:hover {
-            background-color: rgba(255, 215, 0, 0.2);
-        }
+        .card-produto { background-color: #111; border: 1px solid #222; border-radius: 16px; padding: 1.2rem; transition: all 0.3s; margin-bottom: 1rem; }
+        .card-produto:hover { border-color: #FFD70040; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transform: translateY(-2px); }
+        .btn { padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 500; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-azul { background-color: #2563eb; color: white; }
+        .btn-azul:hover { background-color: #1d4ed8; transform: translateY(-1px); }
+        .menu-link { padding: 0.75rem 1rem; border-radius: 0.5rem; transition: all 0.2s; text-align: center; display: block; margin-bottom: 0.5rem; }
+        .menu-link-principal { background-color: rgba(37, 99, 235, 0.2); color: white; }
+        .menu-link-principal:hover { background-color: rgba(255, 215, 0, 0.3); }
+        .menu-link-admin { background-color: rgba(255, 215, 0, 0.1); color: #FFD700; border: 1px solid rgba(255, 215, 0, 0.3); }
+        .menu-link-admin:hover { background-color: rgba(255, 215, 0, 0.2); }
     </style>
 </head>
 <body class="bg-gray-50">
 
-    <header class="cabecalho-nosso">
-        <div class="container mx-auto flex justify-between items-center w-full">
-            <button onclick="abrirMenu()" class="text-2xl text-white hover:text-dourado transition">
-                <i class="fa fa-bars"></i>
-            </button>
+    <header class="cabecalho-nosso" style="background: url('https://i.postimg.cc/N0pFG0Zx/IMG-20260522-055852.webp') no-repeat center center; background-size: cover; height: 180px; position: fixed; width: 100%; top:0; z-index:50; border-bottom: 2px solid rgba(255,215,0,0.2);">
+        <div class="container mx-auto flex justify-between items-center h-full">
+            <button onclick="abrirMenu()" class="text-2xl text-white hover:text-dourado transition"><i class="fa fa-bars"></i></button>
             <h1 class="font-bold text-lg text-white text-shadow">Loja da Val ✨</h1>
             <div></div>
         </div>
@@ -435,22 +65,18 @@
     <div id="menuLateral" class="fixed top-0 left-0 h-full w-4/5 bg-cinzaescuro/95 backdrop-blur-sm text-white shadow-2xl transform -translate-x-full transition-transform duration-300 z-50 p-6 border-r border-dourado/20">
         <div class="flex justify-between items-center mb-8">
             <h2 class="font-bold text-xl text-dourado">Menu Principal</h2>
-            <button onclick="fecharMenu()" class="text-xl text-gray-400 hover:text-dourado transition">
-                <i class="fa fa-times"></i>
-            </button>
+            <button onclick="fecharMenu()" class="text-xl text-gray-400 hover:text-dourado transition"><i class="fa fa-times"></i></button>
         </div>
         <nav class="flex flex-col gap-2">
-            <!-- ✅ BOTÕES PRINCIPAIS -->
             <a href="index.html" class="menu-link menu-link-principal" onclick="fecharMenu()">🏠 Loja da Val 🛍️🛒</a>
             <a href="#meusPedidos" class="menu-link" onclick="fecharMenu()">📋 Meus Pedidos</a>
             
             <div class="mt-4 pt-4 border-t border-gray-700">
                 <p class="text-xs text-gray-500 text-center mb-2">Área Administrativa</p>
-                <!-- ✅ AGORA SIM: LIGADO DIRETO NO ARQUIVO CORRETO -->
-                <!-- 🔐🖥️ Caixa Registradora → ATENDENTE.HTML -->
-                <a href="atendente.html" class="menu-link menu-link-admin" onclick="fecharMenu()">🔐🖥️ Caixa Registradora</a>
-                <!-- 🔐 Administração → ADMIN.HTML -->
-                <a href="admin.html" class="menu-link menu-link-admin" onclick="fecharMenu()">🔐 Administração</a>
+                <!-- ✅ BOTÃO CAIXA REGISTRADORA: VAI PARA LOGIN E PEDE PERMISSÃO PARA ATENDENTE -->
+                <a href="login.html?destino=atendente" class="menu-link menu-link-admin" onclick="fecharMenu()">🔐🖥️ Caixa Registradora</a>
+                <!-- ✅ BOTÃO ADMINISTRAÇÃO: VAI PARA LOGIN E PEDE PERMISSÃO PARA ADMIN -->
+                <a href="login.html?destino=admin" class="menu-link menu-link-admin" onclick="fecharMenu()">🔐 Administração</a>
             </div>
         </nav>
     </div>
@@ -458,419 +84,125 @@
     <div id="fundoEscuro" onclick="fecharMenu()" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
 
     <section class="container mx-auto p-4 pt-44 pb-20">
-        <div class="bg-blue-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-8 text-center shadow">
-            <p class="text-blue-800 font-medium">👋 Olá! Faça seu pedido ou clique no <b>menu</b> para navegar.</p>
+        <div class="bg-blue-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-8 text-center shadow" style="background:#1a1a1a;">
+            <p class="text-blue-800 font-medium" style="color:#e6e6e6;">👋 Olá! Faça seu pedido ou clique no <b>menu</b> para navegar.</p>
         </div>
 
         <div class="bg-white/5 rounded-2xl shadow-lg p-6 mb-10 border border-gray-800">
             <h2 class="text-2xl font-bold text-dourado mb-6 text-center">Nossos Produtos 🛍️✨</h2>
-            <div id="lista-produtos" class="space-y-4">
-                <div class="text-center py-8">
-                    <i class="fa fa-spinner fa-spin text-dourado text-3xl mb-3"></i>
-                    <p class="text-gray-400">Carregando catálogo...</p>
-                </div>
-            </div>
+            <div id="lista-produtos" class="space-y-4"><div class="text-center py-8"><i class="fa fa-spinner fa-spin text-dourado text-3xl mb-3"></i><p class="text-gray-400">Carregando catálogo...</p></div></div>
         </div>
 
         <div class="bg-white/5 rounded-2xl shadow-xl p-6 mb-10 border border-gray-800">
             <h3 class="text-xl font-bold text-dourado mb-4">🛒 Seu Pedido</h3>
             <div id="carrinho-itens" class="mb-4 text-gray-300 p-2 rounded-lg bg-black/30">Nenhum item adicionado ainda.</div>
             <div class="text-right text-xl font-bold mb-4">Total: <span class="text-dourado">R$</span> <span id="carrinho-total" class="valor-forte">0,00</span></div>
-            <div id="nome-cliente-info" class="text-sm text-gray-400 mb-3 text-right italic"></div>
-            <button onclick="abrirFormulario()" class="btn-finalizar">💳 Finalizar Pedido</button>
+            <button onclick="abrirFormulario()" class="btn btn-azul w-full">💳 Finalizar Pedido</button>
         </div>
 
         <div id="meusPedidos" class="bg-white/5 rounded-2xl shadow-lg p-6 border border-gray-800">
             <h2 class="text-2xl font-bold text-dourado mb-6 text-center">📋 Meus Pedidos</h2>
-            <div id="lista-meus-pedidos" class="space-y-4">
-                <div class="text-center text-gray-400 py-8">
-                    <i class="fa fa-shopping-bag text-4xl mb-3 opacity-50"></i>
-                    <p>Nenhum pedido pendente ou em andamento.</p>
-                </div>
-            </div>
+            <div id="lista-meus-pedidos" class="space-y-4"><div class="text-center text-gray-400 py-8"><i class="fa fa-shopping-bag text-4xl mb-3 opacity-50"></i><p>Nenhum pedido pendente ou em andamento.</p></div></div>
         </div>
     </section>
 
-    <!-- MODAL FORMULÁRIO -->
-    <div id="formularioModal" class="modal">
-        <div class="modal-conteudo">
-            <span class="fechar">&times;</span>
+    <div id="formularioModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.85); padding-top:60px;">
+        <div class="modal-conteudo" style="background:#1f2937; margin:auto; padding:24px; border:1px solid #4b5563; width:90%; max-width:500px; border-radius:16px;">
+            <span class="fechar" style="color:#9ca3af; float:right; font-size:28px; cursor:pointer;">&times;</span>
             <h2 class="text-xl font-bold text-center text-dourado mb-4">Informações de Entrega</h2>
-
-            <div class="form-group">
-                <label for="nome">Nome Completo *</label>
-                <input type="text" id="nome" required placeholder="Seu nome completo">
+            <div class="form-group" style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px;">Nome Completo *</label>
+                <input type="text" id="nome" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
             </div>
-
             <div class="form-group">
-                <label for="cidade">Cidade *</label>
-                <input type="text" id="cidade" required placeholder="Sua cidade">
+                <label>Cidade *</label>
+                <input type="text" id="cidade" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
             </div>
-
             <div class="form-group">
-                <label for="rua">Rua / Avenida *</label>
-                <input type="text" id="rua" required placeholder="Nome da rua/avenida">
+                <label>Rua / Avenida *</label>
+                <input type="text" id="rua" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
             </div>
-
             <div class="form-group">
-                <label for="numero">Número *</label>
-                <input type="text" id="numero" required placeholder="Número">
+                <label>Número *</label>
+                <input type="text" id="numero" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
             </div>
-
             <div class="form-group">
-                <label for="bairro">Bairro *</label>
-                <input type="text" id="bairro" required placeholder="Seu bairro">
+                <label>Bairro *</label>
+                <input type="text" id="bairro" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
             </div>
-
             <div class="form-group">
-                <label for="tipo_imovel">Tipo de Residência *</label>
-                <select id="tipo_imovel" required>
-                    <option value="">Selecione...</option>
-                    <option value="Casa">Casa</option>
-                    <option value="Apartamento">Apartamento</option>
-                    <option value="Comércio">Comércio</option>
-                    <option value="Outro">Outro</option>
-                </select>
+                <label>WhatsApp *</label>
+                <input type="tel" id="whatsapp" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
             </div>
-
-            <div class="form-group">
-                <label for="ponto_referencia">Ponto de Referência</label>
-                <input type="text" id="ponto_referencia" placeholder="Ex: Próximo ao mercado, esquina, etc.">
-            </div>
-
-            <div class="form-group">
-                <label for="whatsapp">WhatsApp para Contato *</label>
-                <input type="tel" id="whatsapp" placeholder="(31) 9XXXX-XXXX" required>
-            </div>
-
-            <button id="btnEnviarPedido" class="btn-enviar">📤 Enviar Pedido</button>
+            <button id="btnEnviarPedido" class="btn btn-azul w-full">📤 Enviar Pedido</button>
         </div>
     </div>
 
     <script>
-        // ✅ INICIALIZAÇÃO CORRETA USANDO O CONFIG.JS EXTERNO
-        if (!firebase.apps.length) {
-            firebase.initializeApp(CONFIG_FIREBASE);
-        }
-        window.db = firebase.database();
+        if (!firebase.apps.length) firebase.initializeApp(CONFIG_FIREBASE);
+        const db = firebase.database();
 
-        // 🆕 FUNÇÃO PARA GERAR OU PEGAR O CÓDIGO ÚNICO DO CLIENTE
-        function pegarOuGerarCodigoCliente() {
-            let codigo = localStorage.getItem('codigoClienteValModas');
-            if (!codigo) {
-                codigo = Math.random().toString(36).substring(2, 14).toUpperCase();
-                localStorage.setItem('codigoClienteValModas', codigo);
-            }
-            return codigo;
-        }
+        // === FUNÇÕES DO MENU LATERAL ===
+        function abrirMenu() { document.getElementById('menuLateral').classList.remove('-translate-x-full'); document.getElementById('fundoEscuro').classList.remove('hidden'); document.body.style.overflow='hidden'; }
+        function fecharMenu() { document.getElementById('menuLateral').classList.add('-translate-x-full'); document.getElementById('fundoEscuro').classList.add('hidden'); document.body.style.overflow='auto'; }
 
-        // ✅ FUNÇÕES DE DADOS COMPARTILHADAS
-        function salvarDados(chave, dados) {
-            return db.ref(chave).push(dados);
-        }
-        function carregarDados(chave) {
-            return db.ref(chave).once('value').then(snap => {
-                const valor = snap.val();
-                if (!valor) return [];
-                return Object.entries(valor).map(([id, dados]) => ({ id, ...dados }));
-            });
-        }
-        function formatarMoeda(v) {
-            return `<span class="dourado">R$</span> <span class="branco">${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
-        }
-
-        function abrirMenu() {
-            document.getElementById('menuLateral').classList.remove('-translate-x-full');
-            document.getElementById('fundoEscuro').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-        function fecharMenu() {
-            document.getElementById('menuLateral').classList.add('-translate-x-full');
-            document.getElementById('fundoEscuro').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        const modal = document.getElementById("formularioModal");
-        const spanFechar = document.getElementsByClassName("fechar")[0];
-
-        function abrirFormulario() {
-            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            if (carrinho.length === 0) {
-                alert('⚠️ Adicione itens ao carrinho primeiro!');
-                return;
-            }
-            modal.style.display = "block";
-        }
-
-        spanFechar.onclick = function() {
-            modal.style.display = "none";
-        }
-
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-        document.getElementById("btnEnviarPedido").addEventListener("click", async function() {
-            const nome = document.getElementById('nome').value.trim();
-            const cidade = document.getElementById('cidade').value.trim();
-            const rua = document.getElementById('rua').value.trim();
-            const numero = document.getElementById('numero').value.trim();
-            const bairro = document.getElementById('bairro').value.trim();
-            const tipoImovel = document.getElementById('tipo_imovel').value;
-            const referencia = document.getElementById('ponto_referencia').value.trim();
-            const whatsapp = document.getElementById('whatsapp').value.trim();
-
-            if (!nome || !cidade || !rua || !numero || !bairro || !tipoImovel || !whatsapp) {
-                alert("⚠️ Preencha todos os campos obrigatórios!");
-                return;
-            }
-
-            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            const total = carrinho.reduce((s, i) => s + (i.preco * i.quantidade), 0);
-
-            // ✅ NÚMERO DO WHATSAPP PEGO DO CONFIG.JS
-            const numeroWpp = typeof NUMERO_MENSAGENS !== 'undefined' ? NUMERO_MENSAGENS : '5531999998888';
-
-            const mensagem = `🛡️ *NOVO PEDIDO - LOJA DA VAL* 🛍️\n\nCliente: ${nome}\nContato: ${whatsapp}\nEndereço: ${rua}, ${numero} - ${bairro}\nCidade: ${cidade} - ${tipoImovel}\nReferência: ${referencia || 'Não informada'}\n\n*ITENS DO PEDIDO:*\n${carrinho.map(i => `• ${i.quantidade}x ${i.nome} - R$ ${i.preco.toFixed(2)}`).join('\n')}\n\n*TOTAL: R$ ${total.toFixed(2)}*\n\nAguardando confirmação...`;
-
-            const linkMensagem = `https://wa.me/${numeroWpp}?text=${encodeURIComponent(mensagem)}`;
-
-            const dadosCliente = {
-                nome: nome,
-                cidade: cidade,
-                rua: rua,
-                numero: numero,
-                bairro: bairro,
-                tipoImovel: tipoImovel,
-                pontoReferencia: referencia,
-                whatsapp: whatsapp
-            };
-
-            const novoPedido = {
-                data: new Date().toLocaleString('pt-BR'),
-                itens: carrinho,
-                status: 'Pendente',
-                total: total,
-                cliente: dadosCliente,
-                codigoCliente: pegarOuGerarCodigoCliente()
-            };
-
-            try {
-                await salvarDados('pedidos', novoPedido);
-                localStorage.setItem('ultimoPedido', JSON.stringify(novoPedido));
-                window.dispatchEvent(new CustomEvent('novoPedido', { detail: novoPedido }));
-
-                localStorage.removeItem('carrinho');
-                atualizarCarrinho();
-                carregarMeusPedidos();
-
-                window.open(linkMensagem, '_blank');
-                modal.style.display = "none";
-                alert(`✅ Pedido enviado com sucesso, ${nome}! Em breve entraremos em contato.`);
-            } catch (erro) {
-                alert("❌ Erro ao enviar pedido: " + erro.message);
-                console.error(erro);
-            }
-        });
+        // === FUNÇÕES DE PRODUTOS E CARRINHO ===
+        function formatarMoeda(v) { return `R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; }
+        function salvarDados(chave,dados) { return db.ref(chave).push(dados); }
 
         document.addEventListener('DOMContentLoaded', () => {
-            carregarProdutosLoja();
-            atualizarCarrinho();
-            carregarMeusPedidos();
-
-            db.ref('produtos').on('value', () => {
-                carregarProdutosLoja();
-                window.dispatchEvent(new Event('produtosAtualizados'));
-            });
-
-            db.ref('pedidos').on('value', () => {
-                carregarMeusPedidos();
-                window.dispatchEvent(new Event('pedidosAtualizados'));
-            });
-        });
-
-        async function carregarProdutosLoja() {
-            const container = document.getElementById('lista-produtos');
-            try {
-                const produtos = await carregarDados('produtos');
-                const produtosDisponiveis = produtos.filter(p => p.disponivel === true);
-
-                if (produtosDisponiveis.length === 0) {
-                    container.innerHTML = '<div class="text-center py-8"><i class="fa fa-box-open text-gray-600 text-3xl mb-3"></i><p class="text-gray-500">Nenhum produto cadastrado ou disponível no momento.</p></div>';
-                    return;
-                }
-
-                let html = '';
-                produtosDisponiveis.forEach((p, index) => {
-                    const numeroImagem = (index + 1);
-                    const linkImagem = typeof eval(`LINK${numeroImagem}`) !== 'undefined' ? eval(`LINK${numeroImagem}`) : 'https://i.postimg.cc/VvLMVFgG/IMG-20260518-085339-(2).webp';
-
+            db.ref('produtos').once('value', snap => {
+                const produtos = []; snap.forEach(i => produtos.push({id:i.key,...i.val()}));
+                const container = document.getElementById('lista-produtos');
+                if(produtos.length===0) { container.innerHTML='<div class="text-center py-8 text-gray-500">Nenhum produto disponível.</div>'; return; }
+                let html='';
+                produtos.forEach(p => {
                     html += `
                     <div class="card-produto">
-                        <div class="codigo-produto">#${String(index + 1).padStart(3, '0')}</div>
-                        <div class="moldura-produto">
-                            <img src="${linkImagem}" alt="${p.nome}" class="img-produto" loading="lazy">
-                        </div>
-                        <div class="conteudo-produto">
-                            <div>
-                                <p class="font-bold text-lg preco-produto">${formatarMoeda(p.preco)}</p>
-                                <h3 class="font-bold nome-produto">${p.nome}</h3>
-                                ${p.descricao ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2">${p.descricao}</p>` : ''}
-                            </div>
-                            <div class="caixa-botoes">
-                                <button onclick="adicionarItem('${p.id}', '${p.nome.replace(/'/g, "\\'")}', ${p.preco})" class="btn-adicionar">+ Adicionar</button>
-                            </div>
-                        </div>
+                        <h3 class="font-bold text-lg">${p.nome}</h3>
+                        <p class="text-dourado font-bold">${formatarMoeda(p.preco)}</p>
+                        <button onclick="adicionarItem('${p.id}','${p.nome.replace(/'/g,"\\'")}',${p.preco})" class="btn btn-azul mt-2">+ Adicionar</button>
                     </div>`;
                 });
-
-                container.innerHTML = html;
-            } catch (erro) {
-                container.innerHTML = '<div class="text-center py-8 text-red-400"><i class="fa fa-exclamation-triangle text-3xl mb-3"></i><p>Erro ao carregar produtos. Tente novamente mais tarde.</p></div>';
-                console.error(erro);
-            }
-        }
-
-        function adicionarItem(id, nome, preco) {
-            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            const itemExistente = carrinho.find(i => i.id === id);
-
-            if (itemExistente) {
-                itemExistente.quantidade += 1;
-            } else {
-                carrinho.push({ id, nome, preco, quantidade: 1 });
-            }
-
-            localStorage.setItem('carrinho', JSON.stringify(carrinho));
-            atualizarCarrinho();
-            window.dispatchEvent(new Event('carrinhoAtualizado'));
-        }
-
-        function atualizarCarrinho() {
-            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            const container = document.getElementById('carrinho-itens');
-            const totalEl = document.getElementById('carrinho-total');
-            const nomeInfo = document.getElementById('nome-cliente-info');
-
-            if (carrinho.length === 0) {
-                container.innerHTML = '<span class="text-gray-500">Nenhum item adicionado ainda.</span>';
-                totalEl.innerText = '0,00';
-                nomeInfo.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-            let total = 0;
-            carrinho.forEach(item => {
-                const subtotal = item.preco * item.quantidade;
-                total += subtotal;
-                html += `
-                <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                    <div>
-                        <span class="texto-forte">${item.nome || `Produto ${item.id}`}</span>
-                        <div class="text-sm text-gray-400 mt-1">
-                            <button onclick="alterarQuantidade('${item.id}', -1)" class="btn-qtd">-</button>
-                            <span class="mx-1">${item.quantidade}</span>
-                            <button onclick="alterarQuantidade('${item.id}', 1)" class="btn-qtd">+</button>
-                            <span class="ml-2 text-xs">x ${formatarMoeda(item.preco)}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="valor-forte">${formatarMoeda(subtotal)}</span>
-                        <i class="fa fa-trash lixeira" onclick="removerItemTodo('${item.id}')" title="Remover item"></i>
-                    </div>
-                 </div>`;
+                container.innerHTML=html;
             });
-
-            container.innerHTML = html;
-            totalEl.innerHTML = formatarMoeda(total);
-            nomeInfo.innerHTML = `<span class="text-xs">${carrinho.length} item(s) no carrinho</span>`;
-        }
-
-        function alterarQuantidade(id, delta) {
-            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            const item = carrinho.find(i => i.id === id);
-            if (!item) return;
-
-            item.quantidade += delta;
-            if (item.quantidade <= 0) {
-                const index = carrinho.indexOf(item);
-                carrinho.splice(index, 1);
-            }
-            localStorage.setItem('carrinho', JSON.stringify(carrinho));
             atualizarCarrinho();
-            window.dispatchEvent(new Event('carrinhoAtualizado'));
-        }
+        });
 
-        function removerItemTodo(id) {
-            const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            const novaLista = carrinho.filter(i => i.id !== id);
-            localStorage.setItem('carrinho', JSON.stringify(novaLista));
+        function adicionarItem(id,nome,preco) {
+            let carrinho=JSON.parse(localStorage.getItem('carrinho')||'[]');
+            let item=carrinho.find(i=>i.id===id);
+            item ? item.quantidade++ : carrinho.push({id,nome,preco,quantidade:1});
+            localStorage.setItem('carrinho',JSON.stringify(carrinho));
             atualizarCarrinho();
-            window.dispatchEvent(new Event('carrinhoAtualizado'));
+        }
+        function atualizarCarrinho() {
+            let carrinho=JSON.parse(localStorage.getItem('carrinho')||'[]');
+            let container=document.getElementById('carrinho-itens');
+            let totalEl=document.getElementById('carrinho-total');
+            if(carrinho.length===0) { container.innerHTML='Nenhum item adicionado ainda.'; totalEl.innerText='0,00'; return; }
+            let html=''; let total=0;
+            carrinho.forEach(i=>{ total+=i.preco*i.quantidade; html+=`<div>${i.quantidade}x ${i.nome} - ${formatarMoeda(i.preco*i.quantidade)}</div>`; });
+            container.innerHTML=html; totalEl.innerText=total.toLocaleString('pt-BR',{minimumFractionDigits:2});
         }
 
-        async function carregarMeusPedidos() {
-            try {
-                const codigoAtual = pegarOuGerarCodigoCliente();
-                const pedidos = await carregarDados('pedidos');
-                
-                const pedidosAtivos = pedidos.filter(p => 
-                    p.status !== 'Entregue' && 
-                    p.codigoCliente === codigoAtual
-                );
+        // === MODAL DE FINALIZAR PEDIDO ===
+        const modal=document.getElementById('formularioModal');
+        document.querySelector('.fechar').onclick=()=>modal.style.display='none';
+        function abrirFormulario() { JSON.parse(localStorage.getItem('carrinho')||'[]').length===0 ? alert('Adicione itens primeiro!') : modal.style.display='block'; }
 
-                if(pedidosAtivos.length === 0) { 
-                    document.getElementById('lista-meus-pedidos').innerHTML = `
-                    <div class="text-center text-gray-400 py-6">
-                        <i class="fa fa-shopping-bag text-4xl mb-2 opacity-40"></i>
-                        <p>Nenhum pedido pendente ou em andamento.</p>
-                    </div>`; 
-                    return; 
-                }
-            
-                const container = document.getElementById('lista-meus-pedidos');
-                container.innerHTML = '';
-                pedidosAtivos.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = 'border border-gray-800 rounded-xl p-4 bg-black/40 hover:border-gray-700 transition';
-                    
-                    let corStatus, textoStatus;
-                    switch(p.status) {
-                        case 'Pendente': corStatus = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'; textoStatus = 'Pendente'; break;
-                        case 'Em Preparo': corStatus = 'bg-blue-500/20 text-blue-400 border-blue-500/30'; textoStatus = 'Em Preparo'; break;
-                        case 'Enviado': corStatus = 'bg-purple-500/20 text-purple-400 border-purple-500/30'; textoStatus = 'Enviado'; break;
-                        case 'Entregue': corStatus = 'bg-green-500/20 text-green-400 border-green-500/30'; textoStatus = 'Entregue'; break;
-                        default: corStatus = 'bg-gray-500/20 text-gray-400 border-gray-500/30'; textoStatus = p.status;
-                    }
-
-                    div.innerHTML = `
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="font-bold text-dourado">Pedido #${p.id.slice(-6).toUpperCase()}</span>
-                            <span class="status-badge ${corStatus} border">${textoStatus}</span>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">
-                            <p class="text-gray-400"><span class="font-medium text-gray-300">Data:</span> ${p.data}</p>
-                            <p class="text-gray-400"><span class="font-medium text-gray-300">Cliente:</span> ${p.cliente.nome}</p>
-                            <p class="text-gray-400 md:col-span-2"><span class="font-medium text-gray-300">Endereço:</span> ${p.cliente.rua}, ${p.cliente.numero} - ${p.cliente.bairro}. ${p.cliente.tipoImovel}</p>
-                            <p class="text-gray-400"><span class="font-medium text-gray-300">Cidade:</span> ${p.cliente.cidade}</p>
-                        </div>
-                        <div class="pt-2 border-t border-gray-800 flex justify-between items-center">
-                            <p class="text-xs text-gray-500">${p.itens.length} item(s)</p>
-                            <p class="font-bold text-lg text-green-400">Total: ${formatarMoeda(p.total)}</p>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            } catch (erro) {
-                document.getElementById('lista-meus-pedidos').innerHTML = '<p class="text-red-400 text-center py-4">Erro ao carregar seus pedidos.</p>';
-                console.error(erro);
-            }
-        }
-
+        document.getElementById('btnEnviarPedido').addEventListener('click', async () => {
+            const dados={
+                nome:document.getElementById('nome').value, cidade:document.getElementById('cidade').value,
+                rua:document.getElementById('rua').value, numero:document.getElementById('numero').value,
+                bairro:document.getElementById('bairro').value, whatsapp:document.getElementById('whatsapp').value
+            };
+            if(!dados.nome||!dados.whatsapp) return alert('Preencha todos os campos!');
+            const carrinho=JSON.parse(localStorage.getItem('carrinho')||'[]');
+            const total=carrinho.reduce((s,i)=>s+i.preco*i.quantidade,0);
+            await salvarDados('pedidos',{data:new Date().toLocaleString(),itens:carrinho,status:'Pendente',total,cliente:dados});
+            localStorage.removeItem('carrinho'); atualizarCarrinho(); modal.style.display='none'; alert('Pedido enviado!');
+        });
     </script>
-
 </body>
 </html>
