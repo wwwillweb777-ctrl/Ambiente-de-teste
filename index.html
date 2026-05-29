@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat de Atendimento</title>
 
-    <!-- ✅ ORDEM OBRIGATÓRIA -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // ✅ SUAS CHAVES DO FIREBASE
         const firebaseConfig = {
           apiKey: "AIzaSyAsrFAwToc89j32XX0juvW7C7VYgpGcdiE",
           authDomain: "ambiente-de-teste-b966a.firebaseapp.com",
@@ -23,47 +21,54 @@
         };
 
         const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
-
-        // ✅ INICIALIZA ANTES DE TUDO
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const banco = firebase.database();
         let usuarioAtual = null;
 
-        // ✅ MÉTODO QUE NÃO PRECISA DE DOMÍNIO LIBERADO (JANELINHA)
+        // ✅ MÉTODO DE ACESSO DIRETO, SEM JANELA, SEM LOOP
         function loginComGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
-            
-            auth.signInWithPopup(provider)
+
+            auth.signInWithRedirect(provider);
+        }
+
+        function verificarRetorno() {
+            auth.getRedirectResult()
             .then(result => {
-                if (result.user.email === EMAIL_PERMITIDO) {
-                    usuarioAtual = result.user;
-                    salvarSessao();
-                    alert("✅ LOGADO COM SUCESSO!");
-                    fecharModal();
-                } else {
-                    auth.signOut();
-                    alert("❌ E-mail não autorizado");
+                if (result.user) {
+                    if (result.user.email === EMAIL_PERMITIDO) {
+                        usuarioAtual = result.user;
+                        localStorage.setItem('logado', 'sim');
+                        alert("✅ LOGADO COM SUCESSO!");
+                        entrarSistema();
+                    } else {
+                        auth.signOut();
+                        alert("❌ E-mail não autorizado");
+                    }
                 }
             })
-            .catch(erro => alert("🔴 ERRO: " + erro.message));
+            .catch(erro => {
+                // ✅ Ignora só o erro de janela fechada, mostra só erros reais
+                if (erro.code !== 'auth/popup-closed-by-user') {
+                    alert("🔴 ERRO: " + erro.message);
+                }
+            });
         }
 
-        function salvarSessao() {
-            localStorage.setItem('logado', 'sim');
-            localStorage.setItem('email', EMAIL_PERMITIDO);
-        }
-
-        function verificarSeEstaLogado() {
+        function verificarSessao() {
             if (localStorage.getItem('logado') === 'sim') {
                 usuarioAtual = { email: EMAIL_PERMITIDO };
-                fecharModal();
-                document.getElementById('botao-sair').style.display = 'block';
-                banco.ref('mensagens/geral').on('value', carregarMensagens);
-            } else {
-                abrirModal();
+                entrarSistema();
             }
+        }
+
+        function entrarSistema() {
+            document.getElementById('modalLogin').style.display = 'none';
+            document.getElementById('cabecalho').style.background = '#10b981';
+            document.getElementById('botao-sair').style.display = 'block';
+            banco.ref('mensagens/geral').on('value', carregarMensagens);
         }
 
         function deslogar() {
@@ -73,76 +78,74 @@
                 location.reload();
             });
         }
-
-        function abrirModal() { document.getElementById('modalLogin').style.display = 'flex'; }
-        function fecharModal() { document.getElementById('modalLogin').style.display = 'none'; }
     </script>
 
     <style>
-        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif;}
-        body {background:#f5f5f5; padding-top:60px;}
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f8f9fa; padding-top: 60px; }
 
         .cabecalho {
-            position:fixed; top:0; left:0; right:0;
-            height:60px; background:#7c3aed; color:white;
-            display:flex; align-items:center; justify-content:space-between;
-            padding:0 15px; z-index:999;
+            position: fixed; top: 0; left: 0; right: 0;
+            height: 60px; background: #6f42c1; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; z-index: 999; transition: 0.3s;
         }
 
         .modal-login {
-            position:fixed; top:0; left:0; right:0; bottom:0;
-            background:rgba(0,0,0,0.7);
-            display:flex; align-items:center; justify-content:center;
-            z-index:9999;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
         }
 
         .modal-conteudo {
-            background:white; padding:30px; border-radius:12px;
-            width:90%; max-width:320px; text-align:center;
+            background: white; padding: 30px; border-radius: 12px;
+            width: 90%; max-width: 300px; text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
         }
 
         .botao-google {
-            background:white; color:#333; border:1px solid #ddd;
-            padding:12px; border-radius:8px; width:100%;
-            display:flex; align-items:center; justify-content:center;
-            gap:10px; margin:15px 0; cursor:pointer;
-            font-size:15px; font-weight:500;
+            background: white; color: #333; border: 1px solid #ddd;
+            padding: 12px; border-radius: 8px; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin: 15px 0; cursor: pointer;
+            font-weight: 500;
         }
 
         #mensagens {
-            height:calc(100vh - 140px); overflow-y:auto;
-            padding:15px; background:white; margin:10px;
-            border-radius:8px;
+            height: calc(100vh - 180px); overflow-y: auto;
+            padding: 15px; margin-top: 10px;
+            background: white; border-radius: 8px; margin: 10px;
         }
 
         .barra-entrada {
-            position:fixed; bottom:15px; left:15px; right:15px;
-            display:flex; gap:10px;
+            position: fixed; bottom: 15px; left: 15px; right: 15px;
+            display: flex; gap: 10px;
         }
 
         #texto_msg {
-            flex:1; height:45px; border:2px solid #7c3aed;
-            border-radius:25px; padding:0 20px; font-size:15px;
+            flex: 1; height: 45px; border: 2px solid #6f42c1;
+            border-radius: 25px; padding: 0 20px; font-size: 15px;
         }
 
         #botao-enviar {
-            width:45px; height:45px; background:#dc2626; color:white;
-            border:none; border-radius:50%; cursor:pointer;
+            width: 45px; height: 45px; background: #dc3545; color: white;
+            border: none; border-radius: 50%; cursor: pointer;
         }
 
         .mensagem {
-            margin:8px 0; padding:12px; border-radius:10px;
-            max-width:80%;
+            margin: 8px 0; padding: 12px; border-radius: 10px;
+            max-width: 80%;
         }
-        .eu {background:#ede9fe; margin-left:auto; border-bottom-right-radius:0;}
-        .outro {background:#f3f4f6; margin-right:auto; border-bottom-left-radius:0;}
+        .minha { background: #ede9fe; margin-left: auto; border-bottom-right-radius: 0; }
+        .outra { background: #f3f4f6; margin-right: auto; border-bottom-left-radius: 0; }
     </style>
 </head>
 <body>
 
-    <div class="cabecalho">
+    <div id="cabecalho" class="cabecalho">
         <h3>Chat GitHub Pages</h3>
-        <button id="botao-sair" onclick="deslogar()" style="display:none; background:white; color:#dc2626; border:none; padding:6px 12px; border-radius:6px;">Sair</button>
+        <button id="botao-sair" onclick="deslogar()" style="display:none; background:white; color:#dc3545; border:none; padding:6px 12px; border-radius:6px;">Sair</button>
     </div>
 
     <div id="mensagens">
@@ -156,7 +159,7 @@
 
     <div id="modalLogin" class="modal-login">
         <div class="modal-conteudo">
-            <h2 style="color:#7c3aed; margin-bottom:10px;">🔐 Acesso Autorizado</h2>
+            <h2 style="color:#6f42c1; margin-bottom:10px;">🔐 Acesso Autorizado</h2>
             <p style="color:#666; font-size:14px; margin-bottom:15px;">Apenas o e-mail cadastrado pode entrar</p>
 
             <button class="botao-google" onclick="loginComGoogle()">
@@ -167,19 +170,19 @@
     </div>
 
     <script>
-        // ✅ AO CARREGAR A PÁGINA
         document.addEventListener('DOMContentLoaded', () => {
-            verificarSeEstaLogado(); // Verifica se já está logado
+            verificarRetorno();
+            verificarSessao();
         });
 
         function enviar() {
-            if (!usuarioAtual) return abrirModal();
+            if (!usuarioAtual) return;
             const texto = document.getElementById('texto_msg').value.trim();
             if (!texto) return;
 
             const msg = {
                 texto: texto,
-                email: EMAIL_PERMITIDO,
+                remetente: EMAIL_PERMITIDO,
                 hora: new Date().toLocaleTimeString('pt-BR')
             };
 
@@ -193,11 +196,11 @@
         }
 
         function carregarMensagens(snapshot) {
-            const mensagens = snapshot.val() || [];
+            const dados = snapshot.val() || [];
             let html = '';
 
-            mensagens.forEach(m => {
-                const classe = m.email === EMAIL_PERMITIDO ? 'eu' : 'outro';
+            dados.forEach(m => {
+                const classe = m.remetente === EMAIL_PERMITIDO ? 'minha' : 'outra';
                 html += `
                 <div class="mensagem ${classe}">
                     <div>${m.texto}</div>
@@ -205,7 +208,7 @@
                 </div>`;
             });
 
-            document.getElementById('mensagens').innerHTML = html;
+            document.getElementById('mensagens').innerHTML = html || '<p class="text-center text-muted">Nenhuma mensagem ainda</p>';
             document.getElementById('mensagens').scrollTop = document.getElementById('mensagens').scrollHeight;
         }
     </script>
