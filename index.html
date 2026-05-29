@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat GitHub Pages</title>
 
-    <!-- ✅ CHAMANDO CHAVE DE FORA, COMO VOCÊ MANDOU ✅ -->
+    <!-- ✅ CHAMANDO O ARQUIVO CONFIG.JS DE FORA → CERTO! -->
     <script src="config.js"></script>
 
-    <!-- BIBLIOTECAS -->
+    <!-- BIBLIOTECAS DO FIREBASE (versão 8.10.0 compatível) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // INICIALIZA FIREBASE
+        // INICIALIZA O FIREBASE COM OS DADOS DO CONFIG.JS
         firebase.initializeApp(firebaseConfig);
 
         const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
@@ -22,27 +22,24 @@
         const banco = firebase.database();
         let usuarioAtual = null;
 
-        // LIMPA QUALQUER DADO SALVO ERRADO ANTES DE TUDO
+        // LIMPA DADOS ANTIGOS
         localStorage.clear();
 
-        // LOGAR
+        // LOGAR COM GOOGLE
         function loginComGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
             auth.signInWithRedirect(provider);
         }
 
-        // VERIFICA QUANDO VOLTA DO LOGIN
+        // VERIFICA RETORNO DO LOGIN
         function verificarRetorno() {
             auth.getRedirectResult().then(result => {
                 if (result.user) {
-                    // SÓ LIBERA SE FOR A CONTA EXATA
                     if (result.user.email.trim().toLowerCase() === EMAIL_PERMITIDO.trim().toLowerCase()) {
                         usuarioAtual = result.user;
-                        // SOMIR TELA DE LOGIN
                         document.getElementById("telaLogin").style.display = "none";
                         document.getElementById("telaChat").style.display = "block";
-                        // CARREGA MENSAGENS
                         banco.ref("mensagens/geral").on("value", carregarMensagens);
                     } else {
                         auth.signOut();
@@ -53,7 +50,7 @@
             }).catch(() => {});
         }
 
-        // VERIFICAÇÃO 100% CORRETA: SÓ LIBERA SE ESTIVER LOGADO DE VERDADE
+        // VERIFICA SE JÁ ESTÁ LOGADO
         function verificarSessao() {
             auth.onAuthStateChanged(user => {
                 if (user && user.email.trim().toLowerCase() === EMAIL_PERMITIDO.trim().toLowerCase()) {
@@ -63,14 +60,13 @@
                     banco.ref("mensagens/geral").on("value", carregarMensagens);
                 } else {
                     usuarioAtual = null;
-                    // SEM LOGIN → SÓ TELA DE ACESSO
                     document.getElementById("telaLogin").style.display = "flex";
                     document.getElementById("telaChat").style.display = "none";
                 }
             });
         }
 
-        // SAIR
+        // SAIR DA CONTA
         function deslogar() {
             auth.signOut().then(() => {
                 localStorage.clear();
@@ -83,7 +79,7 @@
         * {margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif;}
         body {overflow:hidden; background:#fff;}
 
-        /* TELA DE LOGIN → SÓ APARECE SE NÃO ESTIVER LOGADO DE VERDADE */
+        /* TELA DE LOGIN */
         #telaLogin {
             position:fixed; top:0; left:0; width:100%; height:100%;
             display:flex; align-items:center; justify-content:center;
@@ -109,7 +105,7 @@
             cursor:pointer;
         }
 
-        /* TELA DO CHAT → SÓ APARECE SE PASSOU PELA VERIFICAÇÃO */
+        /* TELA DO CHAT */
         #telaChat {
             display:none;
             width:100vw; height:100vh;
@@ -204,7 +200,7 @@
             document.getElementById("txt").value = "";
         }
 
-        // CARREGAR MENSAGENS
+        // CARREGAR MENSAGENS NA TELA
         function carregarMensagens(snap) {
             const dados = snap.val() || [];
             let html = "";
