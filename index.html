@@ -3,206 +3,755 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loja da Val</title>
-    <script src="config.js"></script>
+    <title>Chat de Atendimento</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+    <script type="module">
+        // ✅ AQUI SÓ CHAMA O ARQUIVO DE FORA, NÃO TEM CHAVE AQUI
+        import { firebaseConfig, EMAIL_PERMITIDO } from './config.js';
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        dourado: '#FFD700',
-                        escuro: '#000000',
-                        cinzaescuro: '#1a1a1a',
-                        cinzamedio: '#2b2b2b',
-                        cinzaclaro: '#374151',
-                        azulbotao: '#2563eb',
-                    },
-                    fontFamily: { poppins: ['Poppins', 'sans-serif'] }
+        const USAR_FIREBASE = true;
+        let banco, auth, usuarioAtual = null;
+        let emailsBloqueados = [];
+        let notificacaoAtiva = false;
+
+        if(USAR_FIREBASE) {
+            firebase.initializeApp(firebaseConfig);
+            banco = firebase.database().ref();
+            auth = firebase.auth();
+            auth.languageCode = 'pt-BR';
+            auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        }
+
+        // ==================================================
+        // ✅ FUNÇÃO DE VOLTAR
+        // ==================================================
+        function irParaPaginaOrigem() {
+            switch(tipoUsuario) {
+                case 'admin':
+                    window.location.href = 'admin.html';
+                    break;
+                case 'atendente':
+                    window.location.href = 'atendente.html';
+                    break;
+                case 'cliente':
+                default:
+                    window.location.href = 'index.html';
+                    break;
+            }
+        }
+
+        // ==================================================
+        // ✅ SISTEMA DE BLOQUEIO DE E-MAIL
+        // ==================================================
+        function carregarEmailsBloqueados() {
+            const dados = localStorage.getItem('emails_bloqueados');
+            emailsBloqueados = dados ? JSON.parse(dados) : [];
+        }
+        function bloquearEmail(email, nome) {
+            if(!emailsBloqueados.some(b => b.email === email)) {
+                emailsBloqueados.push({email, nome, data: new Date().toLocaleString()});
+                localStorage.setItem('emails_bloqueados', JSON.stringify(emailsBloqueados));
+                alert(`✅ E-mail ${email} bloqueado com sucesso!`);
+            }
+        }
+        function desbloquearEmail(email) {
+            emailsBloqueados = emailsBloqueados.filter(b => b.email !== email);
+            localStorage.setItem('emails_bloqueados', JSON.stringify(emailsBloqueados));
+        }
+        function verificarSeEstaBloqueado(email) {
+            return emailsBloqueados.some(b => b.email === email);
+        }
+        function abrirMenuBloqueios() {
+            if(emailsBloqueados.length === 0) {
+                alert("📋 Nenhum e-mail bloqueado ainda.");
+                return;
+            }
+            let lista = "📋 E-mails Bloqueados:\n\n";
+            emailsBloqueados.forEach((b, i) => {
+                lista += `${i+1}. ${b.nome} <${b.email}>\n`;
+            });
+            const opcao = prompt(lista + "\nDigite o número para DESBLOQUEAR ou cancele para fechar:");
+            if(opcao && !isNaN(opcao)) {
+                const idx = parseInt(opcao)-1;
+                if(emailsBloqueados[idx]) {
+                    desbloquearEmail(emailsBloqueados[idx].email);
+                    alert("✅ E-mail desbloqueado!");
                 }
             }
         }
-    </script>
 
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-            .scrollbar-hide::-webkit-scrollbar { display: none; }
+        // ==================================================
+        // ✅ LOGIN COM GOOGLE + VERIFICAÇÃO DE E-MAIL
+        // ==================================================
+        function loginComGoogle() {
+            const provedor = new firebase.auth.GoogleAuthProvider();
+            provedor.setCustomParameters({ prompt: 'select_account' });
+
+            auth.signInWithPopup(provedor)
+            .then(result => {
+                const usuario = result.user;
+
+                // 🔒 SÓ DEIXA ENTRAR SE FOR O EMAIL PERMITIDO
+                if(usuario.email === EMAIL_PERMITIDO) {
+                    usuarioAtual = usuario;
+                    localStorage.setItem('perfil_cliente', JSON.stringify({
+                        nome: usuario.displayName,
+                        email: usuario.email,
+                        id: usuario.uid
+                    }));
+                    fecharModalLogin();
+                    verificarAcesso();
+                    document.getElementById('avisoVitoria').style.display = 'block';
+                    document.getElementById('avisoNegado').style.display = 'none';
+                } else {
+                    document.getElementById('avisoNegado').style.display = 'block';
+                    auth.signOut();
+                    usuarioAtual = null;
+                    localStorage.removeItem('perfil_cliente');
+                    setTimeout(() => {
+                        document.getElementById('avisoNegado').style.display = 'none';
+                        abrirModalLogin();
+                    }, 3000);
+                }
+            })
+            .catch(erro => {
+                if(erro.code !== 'auth/cancelled-popup-request' && erro.code !== 'auth/popup-closed-by-user') {
+                    alert("❌ Não foi possível conectar. Tente novamente.");
+                }
+            });
         }
-    </style>
 
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
-        body { background-color: #000000 !important; color: #e6e6e6 !important; line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-        .card-produto { background-color: #111; border: 1px solid #222; border-radius: 16px; padding: 1.2rem; transition: all 0.3s; margin-bottom: 1rem; }
-        .card-produto:hover { border-color: #FFD70040; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transform: translateY(-2px); }
-        .btn { padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 500; transition: all 0.2s; border: none; cursor: pointer; }
-        .btn-azul { background-color: #2563eb; color: white; }
-        .btn-azul:hover { background-color: #1d4ed8; transform: translateY(-1px); }
-        .menu-link { padding: 0.75rem 1rem; border-radius: 0.5rem; transition: all 0.2s; text-align: center; display: block; margin-bottom: 0.5rem; }
-        .menu-link-principal { background-color: rgba(37, 99, 235, 0.2); color: white; }
-        .menu-link-principal:hover { background-color: rgba(255, 215, 0, 0.3); }
-        .menu-link-admin { background-color: rgba(255, 215, 0, 0.1); color: #FFD700; border: 1px solid rgba(255, 215, 0, 0.3); }
-        .menu-link-admin:hover { background-color: rgba(255, 215, 0, 0.2); }
-    </style>
-</head>
-<body class="bg-gray-50">
+        function deslogar() {
+            auth.signOut().then(() => {
+                usuarioAtual = null;
+                localStorage.removeItem('perfil_cliente');
+                document.getElementById('botao-sair').style.display = 'none';
+                document.getElementById('avisoVitoria').style.display = 'none';
+                document.getElementById('nome-responsavel-chat').innerText = '';
+                alert("🔌 Desconectado com sucesso.");
+                abrirModalLogin();
+            });
+        }
 
-    <header class="cabecalho-nosso" style="background: url('https://i.postimg.cc/N0pFG0Zx/IMG-20260522-055852.webp') no-repeat center center; background-size: cover; height: 180px; position: fixed; width: 100%; top:0; z-index:50; border-bottom: 2px solid rgba(255,215,0,0.2);">
-        <div class="container mx-auto flex justify-between items-center h-full">
-            <button onclick="abrirMenu()" class="text-2xl text-white hover:text-dourado transition"><i class="fa fa-bars"></i></button>
-            <h1 class="font-bold text-lg text-white text-shadow">Loja da Val ✨</h1>
-            <div></div>
-        </div>
-    </header>
+        function abrirModalLogin() {
+            document.getElementById('modalLogin').style.display = 'flex';
+        }
+        function fecharModalLogin() {
+            document.getElementById('modalLogin').style.display = 'none';
+        }
 
-    <div id="menuLateral" class="fixed top-0 left-0 h-full w-4/5 bg-cinzaescuro/95 backdrop-blur-sm text-white shadow-2xl transform -translate-x-full transition-transform duration-300 z-50 p-6 border-r border-dourado/20">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="font-bold text-xl text-dourado">Menu Principal</h2>
-            <button onclick="fecharMenu()" class="text-xl text-gray-400 hover:text-dourado transition"><i class="fa fa-times"></i></button>
-        </div>
-        <nav class="flex flex-col gap-2">
-            <a href="index.html" class="menu-link menu-link-principal" onclick="fecharMenu()">🏠 Loja da Val 🛍️🛒</a>
-            <a href="#meusPedidos" class="menu-link" onclick="fecharMenu()">📋 Meus Pedidos</a>
-            
-            <div class="mt-4 pt-4 border-t border-gray-700">
-                <p class="text-xs text-gray-500 text-center mb-2">Área Administrativa</p>
-                <!-- ✅ BOTÃO CAIXA REGISTRADORA: VAI PARA LOGIN E PEDE PERMISSÃO PARA ATENDENTE -->
-                <a href="login.html?destino=atendente" class="menu-link menu-link-admin" onclick="fecharMenu()">🔐🖥️ Caixa Registradora</a>
-                <!-- ✅ BOTÃO ADMINISTRAÇÃO: VAI PARA LOGIN E PEDE PERMISSÃO PARA ADMIN -->
-                <a href="login.html?destino=admin" class="menu-link menu-link-admin" onclick="fecharMenu()">🔐 Administração</a>
-            </div>
-        </nav>
-    </div>
-
-    <div id="fundoEscuro" onclick="fecharMenu()" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
-
-    <section class="container mx-auto p-4 pt-44 pb-20">
-        <div class="bg-blue-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-8 text-center shadow" style="background:#1a1a1a;">
-            <p class="text-blue-800 font-medium" style="color:#e6e6e6;">👋 Olá! Faça seu pedido ou clique no <b>menu</b> para navegar.</p>
-        </div>
-
-        <div class="bg-white/5 rounded-2xl shadow-lg p-6 mb-10 border border-gray-800">
-            <h2 class="text-2xl font-bold text-dourado mb-6 text-center">Nossos Produtos 🛍️✨</h2>
-            <div id="lista-produtos" class="space-y-4"><div class="text-center py-8"><i class="fa fa-spinner fa-spin text-dourado text-3xl mb-3"></i><p class="text-gray-400">Carregando catálogo...</p></div></div>
-        </div>
-
-        <div class="bg-white/5 rounded-2xl shadow-xl p-6 mb-10 border border-gray-800">
-            <h3 class="text-xl font-bold text-dourado mb-4">🛒 Seu Pedido</h3>
-            <div id="carrinho-itens" class="mb-4 text-gray-300 p-2 rounded-lg bg-black/30">Nenhum item adicionado ainda.</div>
-            <div class="text-right text-xl font-bold mb-4">Total: <span class="text-dourado">R$</span> <span id="carrinho-total" class="valor-forte">0,00</span></div>
-            <button onclick="abrirFormulario()" class="btn btn-azul w-full">💳 Finalizar Pedido</button>
-        </div>
-
-        <div id="meusPedidos" class="bg-white/5 rounded-2xl shadow-lg p-6 border border-gray-800">
-            <h2 class="text-2xl font-bold text-dourado mb-6 text-center">📋 Meus Pedidos</h2>
-            <div id="lista-meus-pedidos" class="space-y-4"><div class="text-center text-gray-400 py-8"><i class="fa fa-shopping-bag text-4xl mb-3 opacity-50"></i><p>Nenhum pedido pendente ou em andamento.</p></div></div>
-        </div>
-    </section>
-
-    <div id="formularioModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.85); padding-top:60px;">
-        <div class="modal-conteudo" style="background:#1f2937; margin:auto; padding:24px; border:1px solid #4b5563; width:90%; max-width:500px; border-radius:16px;">
-            <span class="fechar" style="color:#9ca3af; float:right; font-size:28px; cursor:pointer;">&times;</span>
-            <h2 class="text-xl font-bold text-center text-dourado mb-4">Informações de Entrega</h2>
-            <div class="form-group" style="margin-bottom:16px;">
-                <label style="display:block; margin-bottom:6px;">Nome Completo *</label>
-                <input type="text" id="nome" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
-            </div>
-            <div class="form-group">
-                <label>Cidade *</label>
-                <input type="text" id="cidade" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
-            </div>
-            <div class="form-group">
-                <label>Rua / Avenida *</label>
-                <input type="text" id="rua" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
-            </div>
-            <div class="form-group">
-                <label>Número *</label>
-                <input type="text" id="numero" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
-            </div>
-            <div class="form-group">
-                <label>Bairro *</label>
-                <input type="text" id="bairro" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
-            </div>
-            <div class="form-group">
-                <label>WhatsApp *</label>
-                <input type="tel" id="whatsapp" required style="width:100%; padding:10px; background:#374151; border:1px solid #4b5563; border-radius:8px; color:white;">
-            </div>
-            <button id="btnEnviarPedido" class="btn btn-azul w-full">📤 Enviar Pedido</button>
-        </div>
-    </div>
-
-    <script>
-        if (!firebase.apps.length) firebase.initializeApp(CONFIG_FIREBASE);
-        const db = firebase.database();
-
-        // === FUNÇÕES DO MENU LATERAL ===
-        function abrirMenu() { document.getElementById('menuLateral').classList.remove('-translate-x-full'); document.getElementById('fundoEscuro').classList.remove('hidden'); document.body.style.overflow='hidden'; }
-        function fecharMenu() { document.getElementById('menuLateral').classList.add('-translate-x-full'); document.getElementById('fundoEscuro').classList.add('hidden'); document.body.style.overflow='auto'; }
-
-        // === FUNÇÕES DE PRODUTOS E CARRINHO ===
-        function formatarMoeda(v) { return `R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; }
-        function salvarDados(chave,dados) { return db.ref(chave).push(dados); }
+        // ==================================================
+        // ✅ RECONHECIMENTO DE USUÁRIO
+        // ==================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipoUsuario = urlParams.get('tipo') || 'cliente';
+        const pedidoId = urlParams.get('pedido') || null;
+        let nomeQuemEnvia = '';
+        let emailQuemEnvia = '';
+        let estaEmbaixo = true;
+        const containerMsg = document.getElementById('mensagens');
 
         document.addEventListener('DOMContentLoaded', () => {
-            db.ref('produtos').once('value', snap => {
-                const produtos = []; snap.forEach(i => produtos.push({id:i.key,...i.val()}));
-                const container = document.getElementById('lista-produtos');
-                if(produtos.length===0) { container.innerHTML='<div class="text-center py-8 text-gray-500">Nenhum produto disponível.</div>'; return; }
-                let html='';
-                produtos.forEach(p => {
-                    html += `
-                    <div class="card-produto">
-                        <h3 class="font-bold text-lg">${p.nome}</h3>
-                        <p class="text-dourado font-bold">${formatarMoeda(p.preco)}</p>
-                        <button onclick="adicionarItem('${p.id}','${p.nome.replace(/'/g,"\\'")}',${p.preco})" class="btn btn-azul mt-2">+ Adicionar</button>
-                    </div>`;
-                });
-                container.innerHTML=html;
+            carregarEmailsBloqueados();
+
+            if(tipoUsuario === 'admin') {
+                document.getElementById('botao-bloquear-todos').style.display = 'block';
+                const logado = localStorage.getItem('admin_logado');
+                if(logado) {
+                    const dados = JSON.parse(logado);
+                    nomeQuemEnvia = dados.nome;
+                    emailQuemEnvia = 'admin@sistema.com.br';
+                    document.getElementById('nome-responsavel-chat').innerText = `Administrador: ${nomeQuemEnvia}`;
+                } else {
+                    alert("Acesso restrito ao Administrador!");
+                    irParaPaginaOrigem();
+                }
+            } 
+            else if(tipoUsuario === 'atendente') {
+                const logado = localStorage.getItem('atendente_logado');
+                if(logado) {
+                    const dados = JSON.parse(logado);
+                    nomeQuemEnvia = dados.nome;
+                    emailQuemEnvia = 'atendente@sistema.com.br';
+                    document.getElementById('nome-responsavel-chat').innerText = `Atendente: ${nomeQuemEnvia}`;
+                } else {
+                    alert("Acesso restrito ao Atendente!");
+                    irParaPaginaOrigem();
+                }
+            } 
+            else {
+                const perfilSalvo = localStorage.getItem('perfil_cliente');
+                if(perfilSalvo) {
+                    const dados = JSON.parse(perfilSalvo);
+                    if(dados.email === EMAIL_PERMITIDO) {
+                        usuarioAtual = dados;
+                        verificarAcesso();
+                        document.getElementById('avisoVitoria').style.display = 'block';
+                    } else {
+                        localStorage.removeItem('perfil_cliente');
+                        abrirModalLogin();
+                    }
+                } else {
+                    abrirModalLogin();
+                }
+            }
+
+            if (pedidoId) {
+                const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+                const pedido = pedidos.find(p => p.id === pedidoId);
+                if (pedido) document.getElementById('info-pedido').innerText = `Pedido #${pedido.id.slice(-4)} - ${pedido.status}`;
+            }
+
+            containerMsg.addEventListener('scroll', () => {
+                estaEmbaixo = containerMsg.scrollHeight - containerMsg.scrollTop <= containerMsg.clientHeight + 30;
+                if(notificacaoAtiva) {
+                    document.getElementById('notif-mensagem').style.display = 'none';
+                    notificacaoAtiva = false;
+                }
             });
-            atualizarCarrinho();
+            
+            if(USAR_FIREBASE) banco.on('value', () => carregarMensagens());
+            else setInterval(carregarMensagens, 1000);
         });
 
-        function adicionarItem(id,nome,preco) {
-            let carrinho=JSON.parse(localStorage.getItem('carrinho')||'[]');
-            let item=carrinho.find(i=>i.id===id);
-            item ? item.quantidade++ : carrinho.push({id,nome,preco,quantidade:1});
-            localStorage.setItem('carrinho',JSON.stringify(carrinho));
-            atualizarCarrinho();
-        }
-        function atualizarCarrinho() {
-            let carrinho=JSON.parse(localStorage.getItem('carrinho')||'[]');
-            let container=document.getElementById('carrinho-itens');
-            let totalEl=document.getElementById('carrinho-total');
-            if(carrinho.length===0) { container.innerHTML='Nenhum item adicionado ainda.'; totalEl.innerText='0,00'; return; }
-            let html=''; let total=0;
-            carrinho.forEach(i=>{ total+=i.preco*i.quantidade; html+=`<div>${i.quantidade}x ${i.nome} - ${formatarMoeda(i.preco*i.quantidade)}</div>`; });
-            container.innerHTML=html; totalEl.innerText=total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+        function verificarAcesso() {
+            if(!usuarioAtual) return;
+
+            if(verificarSeEstaBloqueado(usuarioAtual.email)) {
+                document.getElementById('aviso-bloqueado').style.display = 'block';
+                usuarioAtual = null;
+                nomeQuemEnvia = '';
+                emailQuemEnvia = '';
+                return;
+            }
+
+            nomeQuemEnvia = usuarioAtual.nome || usuarioAtual.displayName;
+            emailQuemEnvia = usuarioAtual.email;
+            document.getElementById('nome-responsavel-chat').innerText = `Você está logado: ${nomeQuemEnvia}`;
+            document.getElementById('botao-sair').style.display = 'block';
         }
 
-        // === MODAL DE FINALIZAR PEDIDO ===
-        const modal=document.getElementById('formularioModal');
-        document.querySelector('.fechar').onclick=()=>modal.style.display='none';
-        function abrirFormulario() { JSON.parse(localStorage.getItem('carrinho')||'[]').length===0 ? alert('Adicione itens primeiro!') : modal.style.display='block'; }
+        function verificarEEnviar() {
+            if(tipoUsuario === 'admin' || tipoUsuario === 'atendente') {
+                enviarMensagem();
+                return;
+            }
 
-        document.getElementById('btnEnviarPedido').addEventListener('click', async () => {
-            const dados={
-                nome:document.getElementById('nome').value, cidade:document.getElementById('cidade').value,
-                rua:document.getElementById('rua').value, numero:document.getElementById('numero').value,
-                bairro:document.getElementById('bairro').value, whatsapp:document.getElementById('whatsapp').value
+            if(!usuarioAtual) {
+                abrirModalLogin();
+                return;
+            }
+
+            if(verificarSeEstaBloqueado(emailQuemEnvia)) {
+                alert("❌ Você está bloqueado e não pode enviar mensagens.");
+                return;
+            }
+
+            enviarMensagem();
+        }
+
+        function salvarDados(caminho, dados) { 
+            try {
+                if(USAR_FIREBASE && banco) {
+                    const ref = pedidoId ? `mensagens/${pedidoId}` : 'mensagens/geral';
+                    banco.child(ref).set(dados);
+                } else {
+                    localStorage.setItem(caminho, JSON.stringify(dados)); 
+                }
+            } catch (e) { console.error("Erro ao salvar:", e); }
+        }
+        
+        function carregarDados(caminho, callback) { 
+            try {
+                if(USAR_FIREBASE && banco) {
+                    const ref = pedidoId ? `mensagens/${pedidoId}` : 'mensagens/geral';
+                    banco.child(ref).once('value', snapshot => {
+                        const dados = snapshot.val() || [];
+                        callback(dados);
+                    });
+                } else {
+                    const d = localStorage.getItem(caminho); 
+                    const dados = d ? JSON.parse(d) : [];
+                    callback(dados);
+                }
+            } catch (e) { 
+                callback([]);
+                console.error("Erro ao carregar:", e); 
+            }
+        }
+
+        function enviarAoApertarEnter(e) {
+            if (e.key === 'Enter') verificarEEnviar();
+        }
+
+        function enviarMensagem() {
+            const campoTexto = document.getElementById('texto_msg');
+            const texto = campoTexto.value.trim();
+            if (!texto || !nomeQuemEnvia) return;
+
+            const mensagem = {
+                texto: texto,
+                remetente: tipoUsuario,
+                nome_remetente: nomeQuemEnvia,
+                email_remetente: emailQuemEnvia,
+                id_usuario: usuarioAtual?.id || null,
+                data: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}),
+                pedidoId: pedidoId
             };
-            if(!dados.nome||!dados.whatsapp) return alert('Preencha todos os campos!');
-            const carrinho=JSON.parse(localStorage.getItem('carrinho')||'[]');
-            const total=carrinho.reduce((s,i)=>s+i.preco*i.quantidade,0);
-            await salvarDados('pedidos',{data:new Date().toLocaleString(),itens:carrinho,status:'Pendente',total,cliente:dados});
-            localStorage.removeItem('carrinho'); atualizarCarrinho(); modal.style.display='none'; alert('Pedido enviado!');
-        });
+
+            carregarDados('mensagens_chat', (todasMensagens) => {
+                todasMensagens.push(mensagem);
+                salvarDados('mensagens_chat', todasMensagens);
+            });
+
+            campoTexto.value = '';
+            campoTexto.focus();
+            estaEmbaixo = true;
+        }
+
+        function apagarMensagem(indice) {
+            carregarDados('mensagens_chat', (todasMensagens) => {
+                todasMensagens.splice(indice, 1);
+                salvarDados('mensagens_chat', todasMensagens);
+            });
+        }
+
+        function carregarMensagens() {
+            carregarDados('mensagens_chat', (todasMensagens) => {
+                let mensagensFiltradas;
+
+                if(tipoUsuario === 'cliente' && usuarioAtual) {
+                    mensagensFiltradas = todasMensagens.filter(m => 
+                        m.email_remetente === usuarioAtual.email || 
+                        m.remetente === 'admin' || m.remetente === 'atendente'
+                    );
+                } 
+                else if(tipoUsuario === 'cliente' && !usuarioAtual) {
+                    mensagensFiltradas = [];
+                }
+                else {
+                    mensagensFiltradas = pedidoId 
+                        ? todasMensagens.filter(m => m.pedidoId === pedidoId) 
+                        : todasMensagens.filter(m => !m.pedidoId);
+                }
+
+                if (mensagensFiltradas.length === 0) {
+                    containerMsg.innerHTML = '<div class="text-center text-gray-500 text-sm mt-4">Nenhuma mensagem ainda. Comece a conversa!</div>';
+                    return;
+                }
+
+                const lastIndex = mensagensFiltradas.length - 1;
+                if(!estaEmbaixo && mensagensFiltradas[lastIndex]?.remetente === 'cliente') {
+                    document.getElementById('notif-mensagem').style.display = 'flex';
+                    notificacaoAtiva = true;
+                }
+
+                let html = '';
+                mensagensFiltradas.forEach((msg, indice) => {
+                    let classe = '';
+                    if(msg.remetente === 'admin' || msg.remetente === 'atendente') classe = 'mensagem-admin';
+
+                    const podeBloquear = (tipoUsuario === 'admin' || tipoUsuario === 'atendente') && msg.remetente === 'cliente';
+
+                    html += `
+                    <div class="mensagem ${classe}">
+                        <span class="apagar-msg" onclick="apagarMensagem(${indice})">&times;</span>
+                        ${podeBloquear ? `<button class="botao-bloquear-email" onclick="if(confirm('Bloquear esse e-mail?')) bloquearEmail('${msg.email_remetente}', '${msg.nome_remetente}')">Bloquear</button>` : ''}
+                        
+                        <div class="nome-msg">
+                            <div>
+                                ${msg.nome_remetente}
+                                <div class="email-msg">${msg.email_remetente || ''}</div>
+                            </div>
+                        </div>
+                        <div>${msg.texto}</div>
+                        <div class="hora-msg">${msg.data}</div>
+                    </div>
+                    `;
+                });
+
+                containerMsg.innerHTML = html;
+                if (estaEmbaixo) containerMsg.scrollTop = containerMsg.scrollHeight;
+            });
+        }
     </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { line-height: 1.6; background-color: #f9fafb; color: #1f2937; padding-top: 75px; overflow-x: hidden; }
+
+        .aviso-vitoria {
+            background-color: #28a745;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .aviso-negado {
+            background-color: #dc2626;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .cabecalho {
+            position: fixed !important;
+            top: 36px !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            height: 75px !important;
+            background-color: #7c3aed !important;
+            color: white !important;
+            padding: 10px 16px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            z-index: 999999 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            transform: translateZ(0) !important;
+            -webkit-transform: translateZ(0) !important;
+        }
+
+        #botao-voltar {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            font-size: 12px !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 4px 8px !important;
+            cursor: pointer !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            margin-left: -8px !important;
+            margin-top: -8px !important;
+        }
+        #botao-voltar:active { transform: scale(0.96); }
+
+        #botao-bloquear-todos {
+            background-color: #ef4444 !important;
+            color: white !important;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #botao-bloquear-todos:hover { background-color: #dc2626 !important; }
+
+        #botao-sair {
+            background-color: #f3f4f6 !important;
+            color: #dc2626 !important;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .notificacao-bolinha {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #dc2626;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulsar 1s infinite alternate;
+        }
+        @keyframes pulsar {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+
+        .aviso-bloqueado {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .modal-login {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999999;
+            display: none;
+        }
+        .modal-conteudo {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .botao-google {
+            background: white;
+            color: #444;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+        .botao-google img { width: 20px; height: 20px; }
+
+        .aviso-privacidade {
+            background-color: #eff6ff;
+            color: #1e40af;
+            font-size: 11px;
+            padding: 6px 10px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 8px 16px;
+            border: 1px solid #bfdbfe;
+        }
+
+        #mensagens {
+            width: 100% !important;
+            height: calc(100vh - 210px) !important;
+            overflow-y: auto !important;
+            padding: 16px !important;
+            background-color: #f9fafb !important;
+            position: relative !important;
+            z-index: 1 !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior: contain !important;
+            margin-top: 36px;
+        }
+
+        .barra-entrada {
+            position: fixed !important;
+            bottom: 15px !important;
+            left: 16px !important;
+            right: 16px !important;
+            width: calc(100% - 32px) !important;
+            background-color: transparent !important;
+            z-index: 999999 !important;
+        }
+
+        .caixa-texto-container {
+            position: relative !important;
+            width: 100% !important;
+        }
+
+        #texto_msg {
+            width: 100% !important;
+            height: 50px !important;
+            border-radius: 9999px !important;
+            border: 2px solid #7c3aed !important;
+            padding: 0 60px 0 20px !important;
+            font-size: 16px !important;
+            background-color: white !important;
+        }
+
+        #botao-enviar {
+            position: absolute !important;
+            right: 5px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            width: 42px !important;
+            height: 42px !important;
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 50% !important;
+            font-size: 16px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            -webkit-appearance: none !important;
+            appearance: none !important;
+        }
+        #botao-enviar:active { transform: translateY(-50%) scale(0.92); }
+
+        .mensagem {
+            margin-bottom: 12px !important;
+            max-width: 78% !important;
+            padding: 14px !important;
+            border-radius: 12px !important;
+            position: relative !important;
+            background-color: #f3f4f6 !important; 
+            color: #1f2937 !important; 
+            border: 1px solid #e5e7eb !important; 
+            margin-left: auto !important;
+            border-bottom-right-radius: 0 !important;
+            padding-top: 22px !important;
+        }
+        .mensagem-admin, .mensagem-atendente {
+            background-color: #ede9fe !important;
+            border-color: #ddd6fe !important;
+            margin-left: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 12px !important;
+        }
+        .nome-msg {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            opacity: 0.8 !important;
+            margin-bottom: 4px !important;
+            color: #4b5563 !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .email-msg {
+            font-size: 10px;
+            color: #6b7280;
+            font-style: italic;
+        }
+        .hora-msg {
+            font-size: 11px !important;
+            opacity: 0.7 !important;
+            text-align: right !important;
+            margin-top: 6px !important;
+            color: #6b7280 !important;
+        }
+        .apagar-msg {
+            position: absolute !important;
+            top: 2px !important;
+            right: 22px !important;
+            font-size: 14px !important;
+            color: #dc2626 !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            opacity: 0.7 !important;
+            transition: opacity 0.2s !important;
+        }
+        .apagar-msg:hover { opacity: 1 !important; }
+
+        .botao-bloquear-email {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 11px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 1px 4px;
+            cursor: pointer;
+            opacity: 0.85;
+        }
+        .botao-bloquear-email:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="avisoVitoria" class="aviso-vitoria" style="display: none;">
+        ✅ VOCÊ CONSEGUIU ENTRAR → VOCÊ GANHOU! 🎉
+    </div>
+
+    <div id="avisoNegado" class="aviso-negado" style="display: none;">
+        ❌ ACESSO NEGADO - E-MAIL NÃO AUTORIZADO
+    </div>
+
+    <div class="cabecalho">
+        <button id="botao-voltar" onclick="irParaPaginaOrigem()">
+            <i class="fa fa-arrow-left mr-1"></i> Voltar
+        </button>
+        <div class="text-center flex-1 px-2 relative">
+            <p id="info-pedido" class="text-sm font-medium">Conversa geral <span id="notif-mensagem" class="notificacao-bolinha" style="display:none;">1</span></p>
+            <p id="nome-responsavel-chat" class="text-xs opacity-90"></p>
+        </div>
+        <div style="display:flex; align-items:center;">
+            <button id="botao-bloquear-todos" onclick="abrirMenuBloqueios()" style="display:none;">
+                <i class="fa fa-ban"></i> Bloqueios
+            </button>
+            <button id="botao-sair" onclick="deslogar()" style="display:none;">
+                <i class="fa fa-sign-out"></i> Sair
+            </button>
+        </div>
+    </div>
+
+    <div class="aviso-privacidade">
+        🔒 Suas mensagens são privadas. Ninguém mais vê o que você escreve aqui.
+    </div>
+
+    <div id="aviso-bloqueado" class="aviso-bloqueado" style="display: none;">
+        <i class="fa fa-ban mr-2"></i> Você foi bloqueado. Não pode mais enviar mensagens.
+    </div>
+
+    <div id="mensagens">
+        <div class="text-center text-gray-500 text-sm mt-4">Inicie uma conversa!</div>
+    </div>
+
+    <div class="barra-entrada">
+        <div class="caixa-texto-container">
+            <input 
+                type="text" 
+                id="texto_msg" 
+                placeholder="Digite 'oi' ou qualquer coisa..." 
+                onkeydown="enviarAoApertarEnter(event)"
+            >
+            <button id="botao-enviar" onclick="verificarEEnviar()">
+                <i class="fa fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="modalLogin" class="modal-login">
+        <div class="modal-conteudo">
+            <h3 class="text-lg font-bold text-purple-700 mb-2">Conectar com o Google</h3>
+            <p class="text-sm text-gray-600 mb-3">Apenas um e-mail autorizado pode entrar</p>
+            <button class="botao-google" onclick="loginComGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Escolher Conta Google
+            </button>
+            <button onclick="fecharModalLogin()" class="mt-4 text-sm text-gray-500">Cancelar</button>
+        </div>
+    </div>
+
 </body>
 </html>
