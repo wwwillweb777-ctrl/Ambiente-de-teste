@@ -5,25 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat GitHub Pages</title>
 
-    <!-- ✅ CHAMANDO CHAVE DE FORA -->
+    <!-- ✅ PRIMEIRO CHAMA AS CHAVES DE FORA -->
     <script src="config.js"></script>
 
-    <!-- BIBLIOTECAS FIREBASE 8.10.0 -->
+    <!-- ✅ DEPOIS CHAMA AS BIBLIOTECAS DO FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // INICIALIZA FIREBASE
-        firebase.initializeApp(firebaseConfig);
-
+        // ✅ VARIÁVEIS GLOBAIS (só recebem valor depois de carregar tudo)
+        let auth, banco, usuarioAtual;
         const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
-        const auth = firebase.auth();
-        const banco = firebase.database();
-        let usuarioAtual = null;
 
-        // LIMPA DADOS ANTIGOS
-        localStorage.clear();
+        // ✅ SÓ INICIALIZA TUDO QUANDO A PÁGINA ESTÁ 100% CARREGADA
+        document.addEventListener("DOMContentLoaded", () => {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            banco = firebase.database();
+            usuarioAtual = null;
+            localStorage.clear();
+
+            // Inicia as verificações
+            verificarRetorno();
+            verificarSessao();
+        });
 
         // LOGAR COM GOOGLE
         function loginComGoogle() {
@@ -32,7 +38,7 @@
             auth.signInWithRedirect(provider);
         }
 
-        // 🛑 CORREÇÃO AQUI: VERIFICA O RETORNO DO LOGIN DE FORMA SEGURA
+        // VERIFICA QUANDO VOLTA DO LOGIN
         async function verificarRetorno() {
             try {
                 const resultado = await auth.getRedirectResult();
@@ -40,12 +46,12 @@
                     await validarAcesso(resultado.user);
                 }
             } catch (erro) {
-                console.error("Erro no retorno do login:", erro);
+                console.error("Erro:", erro);
                 alert("❌ Erro ao tentar logar: " + erro.message);
             }
         }
 
-        // ✅ FUNÇÃO ÚNICA DE VALIDAÇÃO DE ACESSO
+        // ✅ VALIDA SE É O E-MAIL EXATO
         async function validarAcesso(usuario) {
             if (!usuario) return;
 
@@ -53,9 +59,7 @@
 
             if (emailValido) {
                 usuarioAtual = usuario;
-                document.getElementById("telaLogin").style.display = "none";
-                document.getElementById("telaChat").style.display = "block";
-                // CARREGA MENSAGENS EM TEMPO REAL
+                trocarTela(true);
                 banco.ref("mensagens/geral").on("value", carregarMensagens);
             } else {
                 await auth.signOut();
@@ -64,20 +68,24 @@
             }
         }
 
-        // 🛑 VERIFICAÇÃO DE SESSÃO CORRIGIDA
+        // VERIFICA SE JÁ ESTÁ LOGADO
         function verificarSessao() {
             auth.onAuthStateChanged(async user => {
                 if (user) {
                     await validarAcesso(user);
                 } else {
-                    usuarioAtual = null;
-                    document.getElementById("telaLogin").style.display = "flex";
-                    document.getElementById("telaChat").style.display = "none";
+                    trocarTela(false);
                 }
             });
         }
 
-        // SAIR
+        // TROCA ENTRE TELA DE LOGIN E CHAT
+        function trocarTela(estaLogado) {
+            document.getElementById("telaLogin").style.display = estaLogado ? "none" : "flex";
+            document.getElementById("telaChat").style.display = estaLogado ? "block" : "none";
+        }
+
+        // SAIR DA CONTA
         async function deslogar() {
             try {
                 await auth.signOut();
@@ -87,36 +95,86 @@
                 console.error("Erro ao sair:", erro);
             }
         }
+
+        // ENVIAR MENSAGEM
+        function enviar() {
+            const texto = document.getElementById("txt").value.trim();
+            if (!texto || !usuarioAtual) return;
+
+            const msg = {
+                texto: texto,
+                de: EMAIL_PERMITIDO,
+                hora: new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})
+            };
+
+            // Adiciona mensagem sem apagar nada
+            banco.ref("mensagens/geral").push(msg);
+            document.getElementById("txt").value = "";
+        }
+
+        // CARREGAR E EXIBIR MENSAGENS
+        function carregarMensagens(snap) {
+            const dados = snap.val() || {};
+            let html = "";
+
+            Object.values(dados).forEach(m => {
+                const classe = m.de === EMAIL_PERMITIDO ? "eu" : "outro";
+                html += `
+                <div class="msg ${classe}">
+                    ${m.texto}
+                    <div style="font-size:11px; opacity:0.7; margin-top:4px;">${m.hora}</div>
+                </div>`;
+            });
+
+            document.getElementById("msgs").innerHTML = html;
+            document.getElementById("msgs").scrollTop = document.getElementById("msgs").scrollHeight;
+        }
     </script>
 
     <style>
-        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif;}
-        body {overflow:hidden; background:#fff;}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            overflow: hidden;
+            background: #fff;
+        }
 
         /* TELA DE LOGIN */
         #telaLogin {
-            position:fixed; top:0; left:0; width:100%; height:100%;
-            display:flex; align-items:center; justify-content:center;
-            background:#ffffff;
-            z-index:999;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            z-index: 999;
         }
         .caixa {
-            text-align:center;
-            padding:40px 30px;
-            border-radius:12px;
-            box-shadow:0 0 20px rgba(0,0,0,0.1);
+            text-align: center;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
         .botao-g {
-            border:1px solid #ddd;
-            background:white;
-            padding:14px 22px;
-            border-radius:8px;
-            display:flex; align-items:center; justify-content:center;
-            gap:10px;
-            width:260px;
-            margin-top:20px;
-            font-size:16px;
-            cursor:pointer;
+            border: 1px solid #ddd;
+            background: white;
+            padding: 14px 22px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 260px;
+            margin-top: 20px;
+            font-size: 16px;
+            cursor: pointer;
             transition: background 0.2s;
         }
         .botao-g:hover {
@@ -125,49 +183,78 @@
 
         /* TELA DO CHAT */
         #telaChat {
-            display:none;
-            width:100vw; height:100vh;
-            background:#f5f5f5;
-            position:relative;
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            background: #f5f5f5;
+            position: relative;
         }
         .cab {
-            height:60px; background:#6f42c1; color:white;
-            display:flex; align-items:center; justify-content:space-between;
-            padding:0 18px;
+            height: 60px;
+            background: #6f42c1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
         }
         #msgs {
-            height:calc(100vh - 120px);
-            overflow-y:auto;
-            padding:16px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding: 16px;
         }
         .envio {
-            position:absolute; bottom:0; left:0; right:0;
-            height:60px; background:white;
-            display:flex; align-items:center;
-            padding:0 15px;
-            border-top:1px solid #ddd;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: white;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-top: 1px solid #ddd;
         }
         #txt {
-            flex:1; height:42px; border:1px solid #6f42c1;
-            border-radius:21px; padding:0 18px;
-            font-size:15px; margin-right:10px;
+            flex: 1;
+            height: 42px;
+            border: 1px solid #6f42c1;
+            border-radius: 21px;
+            padding: 0 18px;
+            font-size: 15px;
+            margin-right: 10px;
         }
         #btn {
-            width:42px; height:42px; background:#dc3545;
-            color:white; border:none; border-radius:50%;
-            font-size:18px; cursor:pointer;
+            width: 42px;
+            height: 42px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
             transition: transform 0.2s;
         }
         #btn:hover {
             transform: scale(1.05);
         }
         .msg {
-            margin:7px 0; padding:12px 15px;
-            border-radius:10px; max-width:75%;
+            margin: 7px 0;
+            padding: 12px 15px;
+            border-radius: 10px;
+            max-width: 75%;
             word-wrap: break-word;
         }
-        .eu {background:#ede9fe; margin-left:auto; border-bottom-right-radius:0;}
-        .outro {background:#e9ecef; margin-right:auto; border-bottom-left-radius:0;}
+        .eu {
+            background: #ede9fe;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+        .outro {
+            background: #e9ecef;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
     </style>
 </head>
 <body>
@@ -196,49 +283,6 @@
             <button id="btn" onclick="enviar()">➡️</button>
         </div>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            verificarRetorno();
-            verificarSessao();
-        });
-
-        // 🛑 ENVIO DE MENSAGEM CORRIGIDO (NÃO APAGA MAIS NADA)
-        function enviar() {
-            const texto = document.getElementById("txt").value.trim();
-            if (!texto || !usuarioAtual) return;
-
-            const msg = {
-                texto: texto,
-                de: EMAIL_PERMITIDO,
-                hora: new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})
-            };
-
-            // ✅ USA .push() PARA ADICIONAR SEM SUBSTITUIR
-            banco.ref("mensagens/geral").push(msg)
-                .catch(erro => console.error("Erro ao enviar:", erro));
-
-            document.getElementById("txt").value = "";
-        }
-
-        // CARREGAR MENSAGENS
-        function carregarMensagens(snap) {
-            const dados = snap.val() || {}; // Agora é objeto, não array
-            let html = "";
-
-            // PERCORRE OS DADOS CORRETAMENTE
-            Object.values(dados).forEach(m => {
-                let classe = m.de === EMAIL_PERMITIDO ? "eu" : "outro";
-                html += `<div class="msg ${classe}">
-                            ${m.texto}
-                            <div style="font-size:11px; opacity:0.7; margin-top:4px;">${m.hora}</div>
-                        </div>`;
-            });
-
-            document.getElementById("msgs").innerHTML = html;
-            document.getElementById("msgs").scrollTop = document.getElementById("msgs").scrollHeight;
-        }
-    </script>
 
 </body>
 </html>
