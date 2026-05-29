@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat GitHub Pages</title>
 
-    <!-- 🔽 CHAMANDO A CHAVE DO ARQUIVO SEPARADO, DE FORA 🔽 -->
+    <!-- ✅ CHAMANDO CHAVE DE FORA, COMO VOCÊ MANDOU ✅ -->
     <script src="config.js"></script>
 
     <!-- BIBLIOTECAS -->
@@ -14,7 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // INICIALIZA USANDO O QUE VEIO DO ARQUIVO DE FORA
+        // INICIALIZA FIREBASE
         firebase.initializeApp(firebaseConfig);
 
         const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
@@ -22,55 +22,79 @@
         const banco = firebase.database();
         let usuarioAtual = null;
 
+        // LIMPA QUALQUER DADO SALVO ERRADO ANTES DE TUDO
+        localStorage.clear();
+
+        // LOGAR
         function loginComGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
             auth.signInWithRedirect(provider);
         }
 
+        // VERIFICA QUANDO VOLTA DO LOGIN
         function verificarRetorno() {
-            auth.getRedirectResult().then(res => {
-                if (res.user && res.user.email !== EMAIL_PERMITIDO) {
-                    auth.signOut();
-                    alert("❌ CONTA NÃO PERMITIDA");
+            auth.getRedirectResult().then(result => {
+                if (result.user) {
+                    // SÓ LIBERA SE FOR A CONTA EXATA
+                    if (result.user.email.trim().toLowerCase() === EMAIL_PERMITIDO.trim().toLowerCase()) {
+                        usuarioAtual = result.user;
+                        // SOMIR TELA DE LOGIN
+                        document.getElementById("telaLogin").style.display = "none";
+                        document.getElementById("telaChat").style.display = "block";
+                        // CARREGA MENSAGENS
+                        banco.ref("mensagens/geral").on("value", carregarMensagens);
+                    } else {
+                        auth.signOut();
+                        alert("❌ E-MAIL NÃO PERMITIDO! USE SÓ A CONTA CADASTRADA.");
+                        location.reload();
+                    }
                 }
-            });
+            }).catch(() => {});
         }
 
-        function verificarAcesso() {
+        // VERIFICAÇÃO 100% CORRETA: SÓ LIBERA SE ESTIVER LOGADO DE VERDADE
+        function verificarSessao() {
             auth.onAuthStateChanged(user => {
-                if (user && user.email === EMAIL_PERMITIDO) {
+                if (user && user.email.trim().toLowerCase() === EMAIL_PERMITIDO.trim().toLowerCase()) {
                     usuarioAtual = user;
                     document.getElementById("telaLogin").style.display = "none";
                     document.getElementById("telaChat").style.display = "block";
                     banco.ref("mensagens/geral").on("value", carregarMensagens);
                 } else {
                     usuarioAtual = null;
+                    // SEM LOGIN → SÓ TELA DE ACESSO
                     document.getElementById("telaLogin").style.display = "flex";
                     document.getElementById("telaChat").style.display = "none";
                 }
             });
         }
 
+        // SAIR
         function deslogar() {
-            auth.signOut().then(() => location.reload());
+            auth.signOut().then(() => {
+                localStorage.clear();
+                location.reload();
+            });
         }
     </script>
 
     <style>
-        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial;}
-        body {overflow:hidden;}
+        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif;}
+        body {overflow:hidden; background:#fff;}
 
+        /* TELA DE LOGIN → SÓ APARECE SE NÃO ESTIVER LOGADO DE VERDADE */
         #telaLogin {
             position:fixed; top:0; left:0; width:100%; height:100%;
             display:flex; align-items:center; justify-content:center;
-            background:#fff;
+            background:#ffffff;
             z-index:999;
         }
         .caixa {
             text-align:center;
             padding:40px 30px;
             border-radius:12px;
-            box-shadow:0 2px 15px #0000001a;
+            box-shadow:0 0 20px rgba(0,0,0,0.1);
         }
         .botao-g {
             border:1px solid #ddd;
@@ -85,6 +109,7 @@
             cursor:pointer;
         }
 
+        /* TELA DO CHAT → SÓ APARECE SE PASSOU PELA VERIFICAÇÃO */
         #telaChat {
             display:none;
             width:100vw; height:100vh;
@@ -128,6 +153,7 @@
 </head>
 <body>
 
+    <!-- TELA DE LOGIN -->
     <div id="telaLogin">
         <div class="caixa">
             <h1 style="color:#6f42c1; font-size:22px;">🔐 Acesso Autorizado</h1>
@@ -139,6 +165,7 @@
         </div>
     </div>
 
+    <!-- TELA DO CHAT -->
     <div id="telaChat">
         <div class="cab">
             <h2 style="font-size:17px;">Chat GitHub Pages</h2>
@@ -154,9 +181,10 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             verificarRetorno();
-            verificarAcesso();
+            verificarSessao();
         });
 
+        // ENVIAR MENSAGEM
         function enviar() {
             const texto = document.getElementById("txt").value.trim();
             if (!texto || !usuarioAtual) return;
@@ -176,6 +204,7 @@
             document.getElementById("txt").value = "";
         }
 
+        // CARREGAR MENSAGENS
         function carregarMensagens(snap) {
             const dados = snap.val() || [];
             let html = "";
