@@ -7,8 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+    
+    <!-- ✅ JEITO CERTO PARA GITHUB PAGES CARREGAR O CONFIG.JS -->
     <script type="module">
-        // ✅ AQUI SÓ CHAMA O ARQUIVO DE FORA, NÃO TEM CHAVE AQUI
         import { firebaseConfig, EMAIL_PERMITIDO } from './config.js';
 
         const USAR_FIREBASE = true;
@@ -516,7 +517,6 @@
             align-items: center;
             justify-content: center;
             z-index: 9999999;
-            display: none;
         }
         .modal-conteudo {
             background: white;
