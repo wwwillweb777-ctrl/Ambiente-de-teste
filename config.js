@@ -1,4 +1,4 @@
-export const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyAsrFAwToc89j32XX0juvW7C7VYgpGcdiE",
   authDomain: "ambiente-de-teste-b966a.firebaseapp.com",
   databaseURL: "https://ambiente-de-teste-b966a-default-rtdb.firebaseio.com",
@@ -8,4 +8,4 @@ export const firebaseConfig = {
   appId: "1:878588656595:web:46596b60a49e840f4a8d26"
 };
 
-export const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
+const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
