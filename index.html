@@ -29,7 +29,12 @@
         function loginComGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
-            auth.signInWithRedirect(provider);
+            auth.signInWithRedirect(provider)
+                .catch(erro => {
+                    // ⚠️ AVISO DE ERRO NO LOGIN
+                    alert("❌ Erro ao tentar logar: " + erro.message);
+                    console.error("Detalhe do erro:", erro);
+                });
         }
 
         // VERIFICA RETORNO DO LOGIN
@@ -40,14 +45,25 @@
                         usuarioAtual = result.user;
                         document.getElementById("telaLogin").style.display = "none";
                         document.getElementById("telaChat").style.display = "block";
-                        banco.ref("mensagens/geral").on("value", carregarMensagens);
+                        // ⚠️ ADICIONADO: MOSTRA ERRO SE PROIBIDO DE LER
+                        banco.ref("mensagens/geral").on("value", carregarMensagens, erroPermissao);
                     } else {
                         auth.signOut();
                         alert("❌ E-MAIL NÃO PERMITIDO! USE SÓ A CONTA CADASTRADA.");
                         location.reload();
                     }
                 }
-            }).catch(() => {});
+            }).catch(erro => {
+                // ⚠️ AVISO DE ERRO AO RETORNAR DO LOGIN
+                alert("❌ Erro ao voltar do login: " + erro.message);
+                console.error("Detalhe do erro:", erro);
+            });
+        }
+
+        // ⚠️ FUNÇÃO NOVA: AVISA QUANDO TRAVAR POR CAUSA DAS REGRAS
+        function erroPermissao(erro) {
+            alert("🔒 PROBLEMA DE PERMISSÃO! \n\nMotivo: " + erro.message + "\n\nSolução: Verifique as Regras no Firebase, está faltando o .token ou o e-mail está errado lá!");
+            console.error("Erro de permissão:", erro);
         }
 
         // VERIFICA SE JÁ ESTÁ LOGADO
@@ -57,7 +73,8 @@
                     usuarioAtual = user;
                     document.getElementById("telaLogin").style.display = "none";
                     document.getElementById("telaChat").style.display = "block";
-                    banco.ref("mensagens/geral").on("value", carregarMensagens);
+                    // ⚠️ ADICIONADO: MOSTRA ERRO SE PROIBIDO DE LER
+                    banco.ref("mensagens/geral").on("value", carregarMensagens, erroPermissao);
                 } else {
                     usuarioAtual = null;
                     document.getElementById("telaLogin").style.display = "flex";
@@ -71,6 +88,10 @@
             auth.signOut().then(() => {
                 localStorage.clear();
                 location.reload();
+            }).catch(erro => {
+                // ⚠️ AVISO DE ERRO AO SAIR
+                alert("❌ Erro ao sair: " + erro.message);
+                console.error("Detalhe do erro:", erro);
             });
         }
     </script>
@@ -194,7 +215,12 @@
             banco.ref("mensagens/geral").once("value", s => {
                 let todas = s.val() || [];
                 todas.push(msg);
-                banco.ref("mensagens/geral").set(todas);
+                banco.ref("mensagens/geral").set(todas)
+                    .catch(erro => {
+                        // ⚠️ AVISO DE ERRO AO ENVIAR (TRAVOU POR REGRA)
+                        alert("❌ NÃO CONSEGUIU ENVIAR!\n\nMotivo: " + erro.message + "\n\nIsso é problema nas Regras do Firebase, falta o .token!");
+                        console.error("Erro ao escrever:", erro);
+                    });
             });
 
             document.getElementById("txt").value = "";
