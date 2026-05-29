@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat de Atendimento</title>
+    <title>Chat GitHub Pages</title>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -26,54 +26,46 @@
         const banco = firebase.database();
         let usuarioAtual = null;
 
-        // ✅ MÉTODO DE ACESSO DIRETO, SEM JANELA, SEM LOOP
         function loginComGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
-
             auth.signInWithRedirect(provider);
         }
 
         function verificarRetorno() {
-            auth.getRedirectResult()
-            .then(result => {
+            auth.getRedirectResult().then(result => {
                 if (result.user) {
                     if (result.user.email === EMAIL_PERMITIDO) {
                         usuarioAtual = result.user;
-                        localStorage.setItem('logado', 'sim');
-                        alert("✅ LOGADO COM SUCESSO!");
-                        entrarSistema();
+                        // ✨ SOMIR A TELA DE LOGIN DE VEZ ✨
+                        document.getElementById('telaLogin').style.display = 'none';
+                        document.getElementById('telaChat').style.display = 'block';
+                        banco.ref('mensagens/geral').on('value', carregarMensagens);
                     } else {
                         auth.signOut();
-                        alert("❌ E-mail não autorizado");
+                        alert("❌ CONTA NÃO PERMITIDA");
                     }
                 }
-            })
-            .catch(erro => {
-                // ✅ Ignora só o erro de janela fechada, mostra só erros reais
-                if (erro.code !== 'auth/popup-closed-by-user') {
-                    alert("🔴 ERRO: " + erro.message);
+            }).catch(() => {});
+        }
+
+        function verificarSessao() {
+            auth.onAuthStateChanged(user => {
+                if (user && user.email === EMAIL_PERMITIDO) {
+                    usuarioAtual = user;
+                    document.getElementById('telaLogin').style.display = 'none';
+                    document.getElementById('telaChat').style.display = 'block';
+                    banco.ref('mensagens/geral').on('value', carregarMensagens);
+                } else {
+                    usuarioAtual = null;
+                    document.getElementById('telaLogin').style.display = 'flex';
+                    document.getElementById('telaChat').style.display = 'none';
                 }
             });
         }
 
-        function verificarSessao() {
-            if (localStorage.getItem('logado') === 'sim') {
-                usuarioAtual = { email: EMAIL_PERMITIDO };
-                entrarSistema();
-            }
-        }
-
-        function entrarSistema() {
-            document.getElementById('modalLogin').style.display = 'none';
-            document.getElementById('cabecalho').style.background = '#10b981';
-            document.getElementById('botao-sair').style.display = 'block';
-            banco.ref('mensagens/geral').on('value', carregarMensagens);
-        }
-
         function deslogar() {
             auth.signOut().then(() => {
-                localStorage.clear();
                 usuarioAtual = null;
                 location.reload();
             });
@@ -82,90 +74,102 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #f8f9fa; padding-top: 60px; }
+        body { overflow: hidden; }
 
-        .cabecalho {
-            position: fixed; top: 0; left: 0; right: 0;
-            height: 60px; background: #6f42c1; color: white;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px; z-index: 999; transition: 0.3s;
-        }
-
-        .modal-login {
+        /* ✨ TELA DE LOGIN: SÓ APARECE SE NÃO ESTIVER LOGADO ✨ */
+        #telaLogin {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: #fff;
             display: flex; align-items: center; justify-content: center;
             z-index: 9999;
         }
 
-        .modal-conteudo {
-            background: white; padding: 30px; border-radius: 12px;
-            width: 90%; max-width: 300px; text-align: center;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        .caixa-login {
+            text-align: center;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px #00000020;
         }
 
         .botao-google {
             background: white; color: #333; border: 1px solid #ddd;
-            padding: 12px; border-radius: 8px; width: 100%;
+            padding: 14px 20px; border-radius: 8px; width: 260px;
             display: flex; align-items: center; justify-content: center;
-            gap: 10px; margin: 15px 0; cursor: pointer;
-            font-weight: 500;
+            gap: 10px; margin-top: 20px; cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* ✨ TELA DO CHAT: TELA INTEIRA ✨ */
+        #telaChat {
+            display: none;
+            width: 100vw; height: 100vh;
+            background: #f5f5f5;
+            position: relative;
+        }
+
+        .cabecalho {
+            height: 60px; background: #6f42c1; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px;
         }
 
         #mensagens {
-            height: calc(100vh - 180px); overflow-y: auto;
-            padding: 15px; margin-top: 10px;
-            background: white; border-radius: 8px; margin: 10px;
+            height: calc(100vh - 120px); overflow-y: auto;
+            padding: 20px;
         }
 
         .barra-entrada {
-            position: fixed; bottom: 15px; left: 15px; right: 15px;
-            display: flex; gap: 10px;
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 60px; background: white;
+            display: flex; align-items: center; padding: 0 15px;
+            border-top: 1px solid #ddd;
         }
 
         #texto_msg {
-            flex: 1; height: 45px; border: 2px solid #6f42c1;
-            border-radius: 25px; padding: 0 20px; font-size: 15px;
+            flex: 1; height: 40px; border: 1px solid #6f42c1;
+            border-radius: 20px; padding: 0 15px; font-size: 15px;
+            margin-right: 10px;
         }
 
         #botao-enviar {
-            width: 45px; height: 45px; background: #dc3545; color: white;
+            width: 40px; height: 40px; background: #dc3545; color: white;
             border: none; border-radius: 50%; cursor: pointer;
         }
 
         .mensagem {
-            margin: 8px 0; padding: 12px; border-radius: 10px;
-            max-width: 80%;
+            margin: 8px 0; padding: 12px 16px; border-radius: 10px;
+            max-width: 75%;
         }
         .minha { background: #ede9fe; margin-left: auto; border-bottom-right-radius: 0; }
-        .outra { background: #f3f4f6; margin-right: auto; border-bottom-left-radius: 0; }
+        .outra { background: #e9ecef; margin-right: auto; border-bottom-left-radius: 0; }
     </style>
 </head>
 <body>
 
-    <div id="cabecalho" class="cabecalho">
-        <h3>Chat GitHub Pages</h3>
-        <button id="botao-sair" onclick="deslogar()" style="display:none; background:white; color:#dc3545; border:none; padding:6px 12px; border-radius:6px;">Sair</button>
-    </div>
-
-    <div id="mensagens">
-        <p class="text-center text-muted mt-5">👋 Faça login para começar</p>
-    </div>
-
-    <div class="barra-entrada">
-        <input type="text" id="texto_msg" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter') enviar()">
-        <button id="botao-enviar" onclick="enviar()"><i class="fa fa-paper-plane"></i></button>
-    </div>
-
-    <div id="modalLogin" class="modal-login">
-        <div class="modal-conteudo">
-            <h2 style="color:#6f42c1; margin-bottom:10px;">🔐 Acesso Autorizado</h2>
-            <p style="color:#666; font-size:14px; margin-bottom:15px;">Apenas o e-mail cadastrado pode entrar</p>
-
+    <!-- ✨ TELA DE LOGIN ✨ -->
+    <div id="telaLogin">
+        <div class="caixa-login">
+            <h1 style="color:#6f42c1; font-size:22px;">🔐 Acesso Autorizado</h1>
+            <p style="color:#666; margin-top:10px;">Apenas o e-mail cadastrado pode entrar</p>
             <button class="botao-google" onclick="loginComGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
                 Entrar com Google
             </button>
+        </div>
+    </div>
+
+    <!-- ✨ TELA DO CHAT ✨ -->
+    <div id="telaChat">
+        <div class="cabecalho">
+            <h2 style="font-size:18px;">Chat GitHub Pages</h2>
+            <button onclick="deslogar()" style="background:white; color:#dc3545; border:none; padding:6px 12px; border-radius:6px;">Sair</button>
+        </div>
+
+        <div id="mensagens"></div>
+
+        <div class="barra-entrada">
+            <input type="text" id="texto_msg" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter') enviar()">
+            <button id="botao-enviar" onclick="enviar()">➡️</button>
         </div>
     </div>
 
@@ -176,14 +180,13 @@
         });
 
         function enviar() {
-            if (!usuarioAtual) return;
             const texto = document.getElementById('texto_msg').value.trim();
-            if (!texto) return;
+            if (!texto || !usuarioAtual) return;
 
             const msg = {
                 texto: texto,
                 remetente: EMAIL_PERMITIDO,
-                hora: new Date().toLocaleTimeString('pt-BR')
+                hora: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
             };
 
             banco.ref('mensagens/geral').once('value', s => {
@@ -201,14 +204,10 @@
 
             dados.forEach(m => {
                 const classe = m.remetente === EMAIL_PERMITIDO ? 'minha' : 'outra';
-                html += `
-                <div class="mensagem ${classe}">
-                    <div>${m.texto}</div>
-                    <div style="font-size:11px; text-align:right; margin-top:5px; opacity:0.7;">${m.hora}</div>
-                </div>`;
+                html += `<div class="mensagem ${classe}">${m.texto}<div style="font-size:11px; margin-top:4px; opacity:0.7;">${m.hora}</div></div>`;
             });
 
-            document.getElementById('mensagens').innerHTML = html || '<p class="text-center text-muted">Nenhuma mensagem ainda</p>';
+            document.getElementById('mensagens').innerHTML = html;
             document.getElementById('mensagens').scrollTop = document.getElementById('mensagens').scrollHeight;
         }
     </script>
