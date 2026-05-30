@@ -2,242 +2,623 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat GitHub Pages</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cantina da Eliane - Mesas</title>
+    <!-- ✅ ÍCONE PERSONALIZADO COM A SUA IMAGEM -->
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/5thR182H/IMG-20260528-WA0005.webp">
+    <link rel="apple-touch-icon" sizes="192x192" href="https://i.postimg.cc/5thR182H/IMG-20260528-WA0005.webp">
+    <meta name="theme-color" content="#6A1B9A">
+    <meta name="msapplication-TileImage" content="https://i.postimg.cc/5thR182H/IMG-20260528-WA0005.webp">
+    <meta name="msapplication-TileColor" content="#6A1B9A">
 
-    <!-- ✅ CHAMANDO O ARQUIVO CONFIG.JS DE FORA → CERTO! -->
-    <script src="config.js"></script>
-
-    <!-- BIBLIOTECAS DO FIREBASE (versão 8.10.0 compatível) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
-        // INICIALIZA O FIREBASE COM OS DADOS DO CONFIG.JS
-        firebase.initializeApp(firebaseConfig);
-
-        const EMAIL_PERMITIDO = "williamempreiteiro007@gmail.com";
-        const auth = firebase.auth();
-        const banco = firebase.database();
-        let usuarioAtual = null;
-
-        // LIMPA DADOS ANTIGOS
-        localStorage.clear();
-
-        // LOGAR COM GOOGLE
-        function loginComGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'select_account' });
-            auth.signInWithRedirect(provider)
-                .catch(erro => {
-                    // ⚠️ AVISO DE ERRO NO LOGIN
-                    alert("❌ Erro ao tentar logar: " + erro.message);
-                    console.error("Detalhe do erro:", erro);
-                });
-        }
-
-        // VERIFICA RETORNO DO LOGIN
-        function verificarRetorno() {
-            auth.getRedirectResult().then(result => {
-                if (result.user) {
-                    if (result.user.email.trim().toLowerCase() === EMAIL_PERMITIDO.trim().toLowerCase()) {
-                        usuarioAtual = result.user;
-                        document.getElementById("telaLogin").style.display = "none";
-                        document.getElementById("telaChat").style.display = "block";
-                        // ⚠️ ADICIONADO: MOSTRA ERRO SE PROIBIDO DE LER
-                        banco.ref("mensagens/geral").on("value", carregarMensagens, erroPermissao);
-                    } else {
-                        auth.signOut();
-                        alert("❌ E-MAIL NÃO PERMITIDO! USE SÓ A CONTA CADASTRADA.");
-                        location.reload();
-                    }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6A1B9A',
+                        secondary: '#9C27B0',
+                        accent: '#F5C518',
+                        roxoClaro: '#CE93D8',
+                        douradoClaro: '#FFE082',
+                        laranjaSuave: '#FF9800',
+                        danger: '#AD1457',
+                        warning: '#FBC02D',
+                        success: '#43A047',
+                        neutral: '#212121',
+                        fundo: '#FAF7FC',
+                        cinzaSuave: '#EDE7F6'
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                 }
-            }).catch(erro => {
-                // ⚠️ AVISO DE ERRO AO RETORNAR DO LOGIN
-                alert("❌ Erro ao voltar do login: " + erro.message);
-                console.error("Detalhe do erro:", erro);
-            });
-        }
-
-        // ⚠️ FUNÇÃO NOVA: AVISA QUANDO TRAVAR POR CAUSA DAS REGRAS
-        function erroPermissao(erro) {
-            alert("🔒 PROBLEMA DE PERMISSÃO! \n\nMotivo: " + erro.message + "\n\nSolução: Verifique as Regras no Firebase, está faltando o .token ou o e-mail está errado lá!");
-            console.error("Erro de permissão:", erro);
-        }
-
-        // VERIFICA SE JÁ ESTÁ LOGADO
-        function verificarSessao() {
-            auth.onAuthStateChanged(user => {
-                if (user && user.email.trim().toLowerCase() === EMAIL_PERMITIDO.trim().toLowerCase()) {
-                    usuarioAtual = user;
-                    document.getElementById("telaLogin").style.display = "none";
-                    document.getElementById("telaChat").style.display = "block";
-                    // ⚠️ ADICIONADO: MOSTRA ERRO SE PROIBIDO DE LER
-                    banco.ref("mensagens/geral").on("value", carregarMensagens, erroPermissao);
-                } else {
-                    usuarioAtual = null;
-                    document.getElementById("telaLogin").style.display = "flex";
-                    document.getElementById("telaChat").style.display = "none";
-                }
-            });
-        }
-
-        // SAIR DA CONTA
-        function deslogar() {
-            auth.signOut().then(() => {
-                localStorage.clear();
-                location.reload();
-            }).catch(erro => {
-                // ⚠️ AVISO DE ERRO AO SAIR
-                alert("❌ Erro ao sair: " + erro.message);
-                console.error("Detalhe do erro:", erro);
-            });
+            }
         }
     </script>
-
-    <style>
-        * {margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif;}
-        body {overflow:hidden; background:#fff;}
-
-        /* TELA DE LOGIN */
-        #telaLogin {
-            position:fixed; top:0; left:0; width:100%; height:100%;
-            display:flex; align-items:center; justify-content:center;
-            background:#ffffff;
-            z-index:999;
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .touch-target { min-height: 48px; min-width: 48px; }
+            .borda-dourada { border: 2px solid #F5C518; }
+            .sombra-roxa { box-shadow: 0 2px 8px rgba(106, 27, 154, 0.15); }
         }
-        .caixa {
-            text-align:center;
-            padding:40px 30px;
-            border-radius:12px;
-            box-shadow:0 0 20px rgba(0,0,0,0.1);
-        }
-        .botao-g {
-            border:1px solid #ddd;
-            background:white;
-            padding:14px 22px;
-            border-radius:8px;
-            display:flex; align-items:center; justify-content:center;
-            gap:10px;
-            width:260px;
-            margin-top:20px;
-            font-size:16px;
-            cursor:pointer;
-        }
-
-        /* TELA DO CHAT */
-        #telaChat {
-            display:none;
-            width:100vw; height:100vh;
-            background:#f5f5f5;
-            position:relative;
-        }
-        .cab {
-            height:60px; background:#6f42c1; color:white;
-            display:flex; align-items:center; justify-content:space-between;
-            padding:0 18px;
-        }
-        #msgs {
-            height:calc(100vh - 120px);
-            overflow-y:auto;
-            padding:16px;
-        }
-        .envio {
-            position:absolute; bottom:0; left:0; right:0;
-            height:60px; background:white;
-            display:flex; align-items:center;
-            padding:0 15px;
-            border-top:1px solid #ddd;
-        }
-        #txt {
-            flex:1; height:42px; border:1px solid #6f42c1;
-            border-radius:21px; padding:0 18px;
-            font-size:15px; margin-right:10px;
-        }
-        #btn {
-            width:42px; height:42px; background:#dc3545;
-            color:white; border:none; border-radius:50%;
-            font-size:18px; cursor:pointer;
-        }
-        .msg {
-            margin:7px 0; padding:12px 15px;
-            border-radius:10px; max-width:75%;
-        }
-        .eu {background:#ede9fe; margin-left:auto; border-bottom-right-radius:0;}
-        .outro {background:#e9ecef; margin-right:auto; border-bottom-left-radius:0;}
     </style>
 </head>
-<body>
+<body class="bg-fundo font-sans text-neutral overflow-x-hidden">
 
-    <!-- TELA DE LOGIN -->
-    <div id="telaLogin">
-        <div class="caixa">
-            <h1 style="color:#6f42c1; font-size:22px;">🔐 Acesso Autorizado</h1>
-            <p style="color:#666; margin-top:10px;">Apenas o e-mail cadastrado pode entrar</p>
-            <button class="botao-g" onclick="loginComGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
-                Entrar com Google
+    <header class="bg-gradient-to-r from-primary to-secondary text-white px-4 py-4 shadow-lg">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa fa-cutlery text-accent"></i> Cantina da Eliane
+                </h1>
+                <p class="text-xs text-roxoClaro/90">Sistema de Atendimento</p>
+            </div>
+            <span id="statusSalvamento" class="text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold">✅ Salvo</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <button id="btnSalvar" class="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30">
+                <i class="fa fa-save mr-1"></i> Salvar
             </button>
+            <button id="btnDescartar" class="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30">
+                <i class="fa fa-undo mr-1"></i> Descartar
+            </button>
+            <button id="btnLixeira" class="flex-1 bg-danger/80 hover:bg-danger text-white py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30">
+                <i class="fa fa-trash mr-1"></i> Lixeira
+            </button>
+        </div>
+    </header>
+
+    <div class="bg-white border-b border-roxoClaro/30 px-1 shadow-md">
+        <div class="flex overflow-x-auto">
+            <button class="aba-ativa flex-1 py-3 text-sm font-semibold text-center border-b-2 border-primary text-primary bg-cinzaSuave/50 rounded-t-lg" data-aba="mesas">
+                <i class="fa fa-table mr-1"></i> Mesas
+            </button>
+            <a href="cardapio.html" class="flex-1 py-3 text-sm font-semibold text-center text-gray-600 hover:text-secondary transition">
+                <i class="fa fa-list mr-1"></i> Cardápio
+            </a>
+            <a href="caixa.html" class="flex-1 py-3 text-sm font-semibold text-center text-gray-600 hover:text-secondary transition">
+                <i class="fa fa-calculator mr-1"></i> Caixa
+            </a>
         </div>
     </div>
 
-    <!-- TELA DO CHAT -->
-    <div id="telaChat">
-        <div class="cab">
-            <h2 style="font-size:17px;">Chat GitHub Pages</h2>
-            <button onclick="deslogar()" style="background:white; color:#dc3545; border:none; padding:6px 12px; border-radius:6px;">Sair</button>
+    <main class="p-4">
+        <section id="conteudo-mesas" class="conteudo-aba">
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer" data-mesa="1">
+                    <h3 class="font-bold text-lg text-primary">Mesa 1</h3>
+                    <p class="text-xs text-gray-500 mt-1">Livre</p>
+                </div>
+                <div class="bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer" data-mesa="2">
+                    <h3 class="font-bold text-lg text-primary">Mesa 2</h3>
+                    <p class="text-xs text-gray-500 mt-1">Livre</p>
+                </div>
+                <div class="bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer" data-mesa="3">
+                    <h3 class="font-bold text-lg text-primary">Mesa 3</h3>
+                    <p class="text-xs text-gray-500 mt-1">Livre</p>
+                </div>
+                <div class="bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer" data-mesa="4">
+                    <h3 class="font-bold text-lg text-primary">Mesa 4</h3>
+                    <p class="text-xs text-gray-500 mt-1">Livre</p>
+                </div>
+                <div class="bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer" data-mesa="5">
+                    <h3 class="font-bold text-lg text-primary">Mesa 5</h3>
+                    <p class="text-xs text-gray-500 mt-1">Livre</p>
+                </div>
+                <div class="bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer" data-mesa="6">
+                    <h3 class="font-bold text-lg text-primary">Mesa 6</h3>
+                    <p class="text-xs text-gray-500 mt-1">Livre</p>
+                </div>
+            </div>
+
+            <div id="areaMesaDetalhe" class="hidden bg-white rounded-xl sombra-roxa p-4 mb-6 border border-roxoClaro/20">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-primary flex items-center gap-2">
+                        <i class="fa fa-shopping-cart text-accent"></i> Atendimento: <span id="tituloMesa">Mesa 1</span>
+                    </h2>
+                    <button id="btnFecharMesa" class="text-gray-500 hover:text-danger transition">
+                        <i class="fa fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-xs font-medium text-primary mb-1 block">Atendente</label>
+                        <input type="text" id="nomeAtendente" placeholder="Seu nome" 
+                            class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-primary mb-1 block">Cliente</label>
+                        <input type="text" id="nomeCliente" placeholder="Nome do cliente" 
+                            class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="buscarItem" placeholder="Digite nome ou código..." 
+                        class="flex-1 px-3 py-2 border border-roxoClaro/40 rounded-lg text-base focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    <button id="btnAdicionarItem" class="bg-primary hover:bg-secondary text-white px-3 py-2 rounded-lg transition">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+
+                <div class="border border-roxoClaro/30 rounded-lg mb-4 max-h-[250px] overflow-y-auto scrollbar-hide">
+                    <table class="w-full text-sm">
+                        <thead class="bg-cinzaSuave/50">
+                            <tr>
+                                <th class="text-left p-2 text-primary">Item</th>
+                                <th class="text-center p-2 text-primary">Qtd</th>
+                                <th class="text-right p-2 text-primary">Valor</th>
+                                <th class="text-center p-2 text-primary">Remover</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaItensPedido" class="divide-y divide-roxoClaro/20">
+                            <tr><td colspan="4" class="p-3 text-center text-gray-400">Nenhum item adicionado</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-gradient-to-r from-cinzaSuave/50 to-douradoClaro/20 p-3 rounded-lg mb-4 border border-roxoClaro/20">
+                    <div class="flex justify-between font-bold text-lg text-primary">
+                        <span>Total da Conta:</span>
+                        <span id="totalConta" class="text-secondary">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnLancarConta" class="bg-laranjaSuave hover:bg-laranjaSuave/90 text-white py-3 rounded-lg font-semibold touch-target transition">
+                        <i class="fa fa-file-text-o mr-1"></i> Lançar Conta
+                    </button>
+                    <button id="btnFecharConta" class="bg-success hover:bg-success/90 text-white py-3 rounded-lg font-semibold touch-target transition">
+                        <i class="fa fa-money mr-1"></i> Fechar Conta
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAIS -->
+    <div id="modalPagamento" class="fixed inset-0 bg-primary/70 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-md sombra-roxa borda-dourada shadow-2xl">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-cinzaSuave/50 to-douradoClaro/20">
+                <h3 class="font-bold text-lg text-primary">Fechar Conta</h3>
+                <button class="fecharModal text-gray-500 hover:text-danger transition">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-4">
+                <div class="text-center p-3 bg-gradient-to-r from-douradoClaro/30 to-accent/20 rounded-lg">
+                    <p class="text-sm text-gray-600">Valor Total</p>
+                    <p id="valorPagamento" class="text-2xl font-bold text-secondary">R$ 0,00</p>
+                </div>
+                <div>
+                    <p class="font-medium text-primary mb-2">Forma de Pagamento</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="border border-roxoClaro/40 rounded-lg p-2 text-center cursor-pointer hover:border-primary hover:bg-cinzaSuave/30 transition">
+                            <input type="radio" name="formaPagamento" value="Dinheiro" class="mr-1 text-primary" checked>
+                            <span class="text-sm">Dinheiro</span>
+                        </label>
+                        <label class="border border-roxoClaro/40 rounded-lg p-2 text-center cursor-pointer hover:border-primary hover:bg-cinzaSuave/30 transition">
+                            <input type="radio" name="formaPagamento" value="Cartão" class="mr-1 text-primary">
+                            <span class="text-sm">Cartão</span>
+                        </label>
+                        <label class="border border-roxoClaro/40 rounded-lg p-2 text-center cursor-pointer hover:border-primary hover:bg-cinzaSuave/30 transition">
+                            <input type="radio" name="formaPagamento" value="PIX" class="mr-1 text-primary">
+                            <span class="text-sm">PIX</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="trocoArea" class="p-3 bg-cinzaSuave/40 rounded-lg hidden border border-roxoClaro/20">
+                    <label class="text-sm font-medium text-primary mb-1 block">Valor Recebido</label>
+                    <input type="number" id="valorRecebido" step="0.01" min="0" class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg mb-2 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    <div class="flex justify-between font-medium">
+                        <span>Troco:</span>
+                        <span id="valorTroco" class="text-success font-bold">R$ 0,00</span>
+                    </div>
+                </div>
+                <button id="btnConfirmarPagamento" class="w-full bg-gradient-to-r from-success to-success/80 hover:from-success/80 hover:to-success text-white py-3 rounded-lg font-semibold transition">
+                    Confirmar e Finalizar
+                </button>
+            </div>
         </div>
-        <div id="msgs"></div>
-        <div class="envio">
-            <input id="txt" type="text" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter') enviar()">
-            <button id="btn" onclick="enviar()">➡️</button>
+    </div>
+
+    <div id="modalLixeira" class="fixed inset-0 bg-primary/70 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-lg sombra-roxa borda-dourada shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-danger/10 to-danger/20">
+                <h3 class="font-bold text-lg text-danger flex items-center gap-2">
+                    <i class="fa fa-trash"></i> Lixeira Geral
+                </h3>
+                <button class="fecharModal text-gray-500 hover:text-danger transition">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <p class="text-sm text-gray-600 mb-4">Itens excluídos podem ser restaurados ou apagados definitivamente.</p>
+                
+                <h4 class="font-semibold text-primary mb-2">Produtos Excluídos</h4>
+                <div id="listaLixeiraProdutos" class="space-y-2 mb-4 border-b pb-4">
+                    <p class="text-sm text-gray-400 italic">Vazia</p>
+                </div>
+
+                <h4 class="font-semibold text-primary mb-2">Vendas Excluídas</h4>
+                <div id="listaLixeiraVendas" class="space-y-2">
+                    <p class="text-sm text-gray-400 italic">Vazia</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            verificarRetorno();
-            verificarSessao();
+        let produtos = {};
+        let mesas = {};
+        let vendasDia = [];
+        let historicoCompleto = [];
+        let lixeira = { produtos: [], vendas: [] };
+        let totalDia = 0;
+        let houveAlteracao = false;
+        let mesaAtual = null;
+
+        const dadosPadrao = {
+            produtos: {
+                "001": { codigo: "001", nome: "Feijão Tropeiro", preco: 18.90, categoria: "Refeição" },
+                "002": { codigo: "002", nome: "Frango Grelhado", preco: 16.50, categoria: "Refeição" },
+                "003": { codigo: "003", nome: "Arroz Branco", preco: 4.00, categoria: "Acompanhamento" },
+                "004": { codigo: "004", nome: "Refrigerante 500ml", preco: 5.00, categoria: "Bebida" },
+                "005": { codigo: "005", nome: "Suco Natural", preco: 6.50, categoria: "Bebida" },
+                "006": { codigo: "006", nome: "Pudim de Leite", preco: 7.00, categoria: "Sobremesa" }
+            },
+            mesas: {
+                1: { id: 1, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "" },
+                2: { id: 2, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "" },
+                3: { id: 3, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "" },
+                4: { id: 4, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "" },
+                5: { id: 5, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "" },
+                6: { id: 6, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "" }
+            },
+            vendas: [],
+            historico: [],
+            lixeira: { produtos: [], vendas: [] },
+            totalDia: 0
+        };
+
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+            if(dadosSalvos) {
+                const d = JSON.parse(dadosSalvos);
+                produtos = d.produtos;
+                mesas = d.mesas;
+                vendasDia = d.vendas;
+                historicoCompleto = d.historico || [];
+                lixeira = d.lixeira || { produtos: [], vendas: [] };
+                totalDia = d.totalDia;
+            } else {
+                produtos = dadosPadrao.produtos;
+                mesas = dadosPadrao.mesas;
+                vendasDia = dadosPadrao.vendas;
+                historicoCompleto = dadosPadrao.historico;
+                lixeira = dadosPadrao.lixeira;
+                totalDia = dadosPadrao.totalDia;
+                salvarTudo();
+            }
+            atualizarStatusSalvo(false);
+            renderizarMesas();
+        }
+
+        function salvarTudo() {
+            const dados = { produtos, mesas, vendas: vendasDia, historico: historicoCompleto, lixeira, totalDia };
+            localStorage.setItem('cantinaElianeDados', JSON.stringify(dados));
+            atualizarStatusSalvo(false);
+        }
+
+        function descartarAlteracoes() {
+            if(confirm("⚠️ Descartar todas as alterações desde o último salvamento?")) {
+                carregarDados();
+            }
+        }
+
+        function atualizarStatusSalvo(alterado = true) {
+            houveAlteracao = alterado;
+            const el = document.getElementById('statusSalvamento');
+            if(alterado) {
+                el.textContent = "⚠️ Não salvo";
+                el.className = "text-xs bg-warning text-primary px-2 py-1 rounded-full font-semibold";
+            } else {
+                el.textContent = "✅ Salvo";
+                el.className = "text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold";
+            }
+        }
+
+        function renderizarMesas() {
+            Object.values(mesas).forEach(mesa => {
+                const elMesa = document.querySelector(`[data-mesa="${mesa.id}"]`);
+                if(mesa.status === "ocupada") {
+                    elMesa.className = "bg-white rounded-xl sombra-roxa border-2 border-danger p-3 text-center mesa-item hover:border-danger/70 transition-all cursor-pointer";
+                    elMesa.querySelector('p').textContent = `R$ ${mesa.total.toFixed(2)}`;
+                    elMesa.querySelector('p').className = "text-xs font-bold text-danger mt-1";
+                } else {
+                    elMesa.className = "bg-white rounded-xl sombra-roxa border-2 border-cinzaSuave p-3 text-center mesa-item hover:border-primary/60 transition-all cursor-pointer";
+                    elMesa.querySelector('p').textContent = "Livre";
+                    elMesa.querySelector('p').className = "text-xs text-gray-500 mt-1";
+                }
+            });
+        }
+
+        document.querySelectorAll('.mesa-item').forEach(item => {
+            item.addEventListener('click', () => {
+                mesaAtual = parseInt(item.dataset.mesa);
+                document.getElementById('tituloMesa').textContent = `Mesa ${mesaAtual}`;
+                document.getElementById('nomeCliente').value = mesas[mesaAtual].cliente || "";
+                document.getElementById('nomeAtendente').value = mesas[mesaAtual].atendente || "";
+                document.getElementById('areaMesaDetalhe').classList.remove('hidden');
+                atualizarPedidoMesa();
+            });
         });
 
-        // ENVIAR MENSAGEM
-        function enviar() {
-            const texto = document.getElementById("txt").value.trim();
-            if (!texto || !usuarioAtual) return;
+        document.getElementById('btnFecharMesa').addEventListener('click', () => {
+            if(mesaAtual) {
+                mesas[mesaAtual].cliente = document.getElementById('nomeCliente').value;
+                mesas[mesaAtual].atendente = document.getElementById('nomeAtendente').value;
+                atualizarStatusSalvo(true);
+            }
+            document.getElementById('areaMesaDetalhe').classList.add('hidden');
+            mesaAtual = null;
+        });
 
-            const msg = {
-                texto: texto,
-                de: EMAIL_PERMITIDO,
-                hora: new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})
+        document.getElementById('btnAdicionarItem').addEventListener('click', () => {
+            const termo = document.getElementById('buscarItem').value.trim();
+            if(!termo || !mesaAtual) return;
+
+            let encontrado = null;
+            if(produtos[termo]) encontrado = produtos[termo];
+            else {
+                Object.values(produtos).forEach(p => {
+                    if(p.nome.toLowerCase().includes(termo.toLowerCase())) encontrado = p;
+                });
+            }
+
+            if(encontrado) {
+                mesas[mesaAtual].pedidos.push({...encontrado, qtd: 1, subtotal: encontrado.preco});
+                mesas[mesaAtual].status = "ocupada";
+                mesas[mesaAtual].total = mesas[mesaAtual].pedidos.reduce((s,i) => s + i.subtotal, 0);
+                
+                atualizarPedidoMesa();
+                renderizarMesas();
+                atualizarStatusSalvo(true);
+                document.getElementById('buscarItem').value = "";
+            } else {
+                alert("Item não encontrado!");
+            }
+        });
+
+        function atualizarPedidoMesa() {
+            const tbody = document.getElementById('listaItensPedido');
+            const pedidos = mesas[mesaAtual].pedidos;
+            tbody.innerHTML = "";
+
+            if(pedidos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">Nenhum item adicionado</td></tr>`;
+            } else {
+                pedidos.forEach((item, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-cinzaSuave/30 transition-colors";
+                    tr.innerHTML = `
+                        <td class="p-2">
+                            <div class="font-medium">${item.nome}</div>
+                            <div class="text-xs text-roxoClaro">${item.categoria}</div>
+                        </td>
+                        <td class="p-2 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                <button class="diminuir-qtd w-7 h-7 rounded bg-roxoClaro/20 hover:bg-roxoClaro/40 text-primary font-bold transition">-</button>
+                                <span class="font-semibold">${item.qtd}</span>
+                                <button class="aumentar-qtd w-7 h-7 rounded bg-roxoClaro/20 hover:bg-roxoClaro/40 text-primary font-bold transition">+</button>
+                            </div>
+                        </td>
+                        <td class="p-2 text-right font-medium text-secondary">R$ ${item.subtotal.toFixed(2)}</td>
+                        <td class="p-2 text-center">
+                            <button class="remover-item text-danger hover:text-danger/70 transition text-lg" title="Remover item">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    tr.querySelector('.aumentar-qtd').addEventListener('click', () => {
+                        item.qtd++;
+                        item.subtotal = item.qtd * item.preco;
+                        mesas[mesaAtual].total += item.preco;
+                        atualizarPedidoMesa();
+                        atualizarStatusSalvo(true);
+                    });
+                    tr.querySelector('.diminuir-qtd').addEventListener('click', () => {
+                        if(item.qtd > 1) {
+                            item.qtd--;
+                            item.subtotal = item.qtd * item.preco;
+                            mesas[mesaAtual].total -= item.preco;
+                            atualizarPedidoMesa();
+                            atualizarStatusSalvo(true);
+                        }
+                    });
+                    tr.querySelector('.remover-item').addEventListener('click', () => {
+                        if(confirm('Remover este item do pedido?')) {
+                            mesas[mesaAtual].pedidos.splice(idx, 1);
+                            mesas[mesaAtual].total = mesas[mesaAtual].pedidos.reduce((s,i) => s + i.subtotal, 0);
+                            atualizarPedidoMesa();
+                            atualizarStatusSalvo(true);
+                        }
+                    });
+                });
+            }
+
+            document.getElementById('totalConta').textContent = `R$ ${mesas[mesaAtual].total.toFixed(2)}`;
+        }
+
+        document.getElementById('btnFecharConta').addEventListener('click', () => {
+            if(mesas[mesaAtual].total <= 0) return alert("Conta vazia!");
+            
+            mesas[mesaAtual].cliente = document.getElementById('nomeCliente').value || "Não informado";
+            mesas[mesaAtual].atendente = document.getElementById('nomeAtendente').value || "Não informado";
+
+            document.getElementById('valorPagamento').textContent = `R$ ${mesas[mesaAtual].total.toFixed(2)}`;
+            document.getElementById('modalPagamento').classList.remove('hidden');
+            
+            document.querySelectorAll('input[name="formaPagamento"]').forEach(r => {
+                r.addEventListener('change', () => {
+                    document.getElementById('trocoArea').classList.toggle('hidden', r.value !== "Dinheiro");
+                });
+            });
+
+            document.getElementById('valorRecebido').addEventListener('input', () => {
+                const total = mesas[mesaAtual].total;
+                const recebido = parseFloat(document.getElementById('valorRecebido').value) || 0;
+                const troco = recebido >= total ? recebido - total : 0;
+                document.getElementById('valorTroco').textContent = `R$ ${troco.toFixed(2)}`;
+            });
+        });
+
+        document.getElementById('btnConfirmarPagamento').addEventListener('click', () => {
+            const forma = document.querySelector('input[name="formaPagamento"]:checked').value;
+            const valor = mesas[mesaAtual].total;
+            const dadosMesa = mesas[mesaAtual];
+
+            const registroVenda = { 
+                id: Date.now(),
+                data: new Date().toLocaleString(), 
+                valor, 
+                forma, 
+                mesa: mesaAtual,
+                cliente: dadosMesa.cliente,
+                atendente: dadosMesa.atendente,
+                itens: [...dadosMesa.pedidos]
             };
 
-            banco.ref("mensagens/geral").once("value", s => {
-                let todas = s.val() || [];
-                todas.push(msg);
-                banco.ref("mensagens/geral").set(todas)
-                    .catch(erro => {
-                        // ⚠️ AVISO DE ERRO AO ENVIAR (TRAVOU POR REGRA)
-                        alert("❌ NÃO CONSEGUIU ENVIAR!\n\nMotivo: " + erro.message + "\n\nIsso é problema nas Regras do Firebase, falta o .token!");
-                        console.error("Erro ao escrever:", erro);
+            vendasDia.push(registroVenda);
+            historicoCompleto.push(registroVenda);
+            totalDia += valor;
+
+            mesas[mesaAtual].status = "livre";
+            mesas[mesaAtual].pedidos = [];
+            mesas[mesaAtual].total = 0;
+            mesas[mesaAtual].cliente = "";
+            mesas[mesaAtual].atendente = "";
+
+            renderizarMesas();
+            atualizarStatusSalvo(true);
+            
+            document.getElementById('modalPagamento').classList.add('hidden');
+            document.getElementById('areaMesaDetalhe').classList.add('hidden');
+        });
+
+        // Lixeira
+        document.getElementById('btnLixeira').addEventListener('click', () => {
+            atualizarLixeira();
+            document.getElementById('modalLixeira').classList.remove('hidden');
+        });
+
+        function atualizarLixeira() {
+            const elProd = document.getElementById('listaLixeiraProdutos');
+            if(lixeira.produtos.length === 0) {
+                elProd.innerHTML = `<p class="text-sm text-gray-400 italic">Vazia</p>`;
+            } else {
+                elProd.innerHTML = "";
+                lixeira.produtos.forEach((item, idx) => {
+                    const div = document.createElement('div');
+                    div.className = "p-2 bg-cinzaSuave/30 rounded-lg flex justify-between items-center";
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-medium text-sm">${item.nome}</p>
+                            <p class="text-xs text-gray-500">Excluído em: ${item.dataExclusao}</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="restaurar-produto text-success hover:text-success/80 transition" title="Restaurar">
+                                <i class="fa fa-undo"></i>
+                            </button>
+                            <button class="apagar-produto text-danger hover:text-danger/80 transition" title="Apagar definitivamente">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    div.querySelector('.restaurar-produto').addEventListener('click', () => {
+                        if(confirm("Restaurar este produto?")) {
+                            produtos[item.codigo] = item;
+                            lixeira.produtos.splice(idx, 1);
+                            atualizarLixeira();
+                            atualizarStatusSalvo(true);
+                        }
                     });
-            });
+                    div.querySelector('.apagar-produto').addEventListener('click', () => {
+                        if(confirm("⚠️ TEM CERTEZA? Isso apaga para SEMPRE!")) {
+                            lixeira.produtos.splice(idx, 1);
+                            atualizarLixeira();
+                            atualizarStatusSalvo(true);
+                        }
+                    });
+                    elProd.appendChild(div);
+                });
+            }
 
-            document.getElementById("txt").value = "";
+            const elVend = document.getElementById('listaLixeiraVendas');
+            if(lixeira.vendas.length === 0) {
+                elVend.innerHTML = `<p class="text-sm text-gray-400 italic">Vazia</p>`;
+            } else {
+                elVend.innerHTML = "";
+                lixeira.vendas.forEach((v, idx) => {
+                    const div = document.createElement('div');
+                    div.className = "p-2 bg-cinzaSuave/30 rounded-lg flex justify-between items-center";
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-medium text-sm">Mesa ${v.mesa} - R$ ${v.valor.toFixed(2)}</p>
+                            <p class="text-xs text-gray-500">Excluído em: ${v.dataExclusao}</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="restaurar-venda text-success hover:text-success/80 transition" title="Restaurar">
+                                <i class="fa fa-undo"></i>
+                            </button>
+                            <button class="apagar-venda text-danger hover:text-danger/80 transition" title="Apagar definitivamente">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    div.querySelector('.restaurar-venda').addEventListener('click', () => {
+                        if(confirm("Restaurar esta venda ao caixa?")) {
+                            vendasDia.push(v);
+                            totalDia += v.valor;
+                            lixeira.vendas.splice(idx, 1);
+                            atualizarLixeira();
+                            atualizarStatusSalvo(true);
+                        }
+                    });
+                    div.querySelector('.apagar-venda').addEventListener('click', () => {
+                        if(confirm("⚠️ TEM CERTEZA? Isso apaga para SEMPRE!")) {
+                            lixeira.vendas.splice(idx, 1);
+                            atualizarLixeira();
+                            atualizarStatusSalvo(true);
+                        }
+                    });
+                    elVend.appendChild(div);
+                });
+            }
         }
 
-        // CARREGAR MENSAGENS NA TELA
-        function carregarMensagens(snap) {
-            const dados = snap.val() || [];
-            let html = "";
-            dados.forEach(m => {
-                let classe = m.de === EMAIL_PERMITIDO ? "eu" : "outro";
-                html += `<div class="msg ${classe}">${m.texto}<div style="font-size:11px; opacity:0.7; margin-top:4px;">${m.hora}</div></div>`;
-            });
-            document.getElementById("msgs").innerHTML = html;
-            document.getElementById("msgs").scrollTop = document.getElementById("msgs").scrollHeight;
-        }
+        document.querySelectorAll('.fecharModal').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.fixed').classList.add('hidden'));
+        });
+
+        document.getElementById('btnSalvar').addEventListener('click', salvarTudo);
+        document.getElementById('btnDescartar').addEventListener('click', descartarAlteracoes);
+
+        window.addEventListener('beforeunload', (e) => {
+            if(houveAlteracao) {
+                e.preventDefault();
+                e.returnValue = "Existem alterações não salvas! Tem certeza que deseja sair?";
+            }
+        });
+
+        carregarDados();
     </script>
-
 </body>
 </html>
