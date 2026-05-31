@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cantina da Eliane - Cardápio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6A1B9A', // ROXO = estado NEUTRO / DESLIGADO
+                        secondary: '#9C27B0',
+                        accent: '#F5C518',
+                        roxoClaro: '#CE93D8',
+                        douradoClaro: '#FFE082',
+                        laranjaSuave: '#FF9800',
+                        danger: '#AD1457', // VERMELHO = ao clicar no Salvar
+                        warning: '#FBC02D',
+                        success: '#43A047', // VERDE = estado ATIVO / LIGADO
+                        neutral: '#212121',
+                        fundo: '#FAF7FC',
+                        cinzaSuave: '#EDE7F6'
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .touch-target { min-height: 48px; min-width: 48px; }
+            .borda-dourada { border: 2px solid #F5C518; }
+            .sombra-roxa { box-shadow: 0 2px 8px rgba(106, 27, 154, 0.15); }
+            
+            /* ✅ BOTÃO CARDÁPIO - LÓGICA DE ESTADO:
+               - DESLIGADO / NÃO ESTOU AQUI: Roxo, muda para Verde só ao clicar
+               - LIGADO / ESTOU AQUI: Verde e fica verde fixo
+            */
+            .botao-cardapio {
+                @apply bg-primary text-white font-semibold py-3 px-2 rounded-t-lg transition-all duration-200 border-b-2 border-primary;
+            }
+            /* Ao clicar (antes de mudar de página): fica verde */
+            .botao-cardapio:active, 
+            .botao-cardapio:focus {
+                @apply bg-success border-success;
+            }
+            /* Quando É a página ativa: fica VERDE SEMPRE */
+            .botao-cardapio.ativo {
+                @apply bg-success border-success !important;
+            }
+
+            /* ✅ BOTÃO SALVAR - LÓGICA CERTA:
+               Normal = Roxo (neutro) | Ao clicar = Vermelho | Ao soltar = Volta Roxo
+            */
+            .botao-salvar {
+                @apply bg-primary text-white transition-all duration-200;
+            }
+            .botao-salvar:active, 
+            .botao-salvar:focus {
+                @apply bg-danger;
+            }
+
+            /* Outras abas (Mesas/Caixa) = sempre roxo/neutro */
+            .aba-neutra {
+                @apply text-gray-600 hover:text-secondary transition;
+            }
+        }
+    </style>
+</head>
+<body class="bg-fundo font-sans text-neutral overflow-x-hidden">
+
+    <header class="bg-gradient-to-r from-primary to-secondary text-white px-4 py-4 shadow-lg">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa fa-cutlery text-accent"></i> Cantina da Eliane
+                </h1>
+                <p class="text-xs text-roxoClaro/90">Gerenciamento de Cardápio</p>
+            </div>
+            <span id="statusSalvamento" class="text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold">✅ Salvo</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <a href="index.html" class="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30 text-center block">
+                <i class="fa fa-arrow-left mr-1"></i> Voltar
+            </a>
+            <button id="btnSalvar" class="flex-1 py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30 botao-salvar">
+                <i class="fa fa-save mr-1"></i> Salvar
+            </button>
+        </div>
+    </header>
+
+    <div class="bg-white border-b border-roxoClaro/30 px-1 shadow-md">
+        <div class="flex overflow-x-auto">
+            <a href="index.html" class="flex-1 py-3 text-sm font-semibold text-center aba-neutra">
+                <i class="fa fa-table mr-1"></i> Mesas
+            </a>
+            <!-- ✅ AQUI: Botão Cardápio com classe "ativo" pois ESTAMOS NA PÁGINA DELE -->
+            <button class="flex-1 text-sm text-center botao-cardapio ativo" data-aba="cardapio">
+                <i class="fa fa-list mr-1"></i> Cardápio
+            </button>
+            <a href="caixa.html" class="flex-1 py-3 text-sm font-semibold text-center aba-neutra">
+                <i class="fa fa-calculator mr-1"></i> Caixa
+            </a>
+        </div>
+    </div>
+
+    <main class="p-4">
+        <section id="conteudo-cardapio" class="conteudo-aba">
+            <div class="flex gap-2 mb-4">
+                <!-- ✅ ALTERAÇÃO AQUI: Fundo preto, letras brancas, não clicável -->
+                <div class="flex-1 px-3 py-2 bg-black text-white rounded-lg flex items-center justify-center font-medium">
+                    Hoje nós temos 👇
+                </div>
+                <button id="btnNovoProduto" class="bg-primary hover:bg-secondary text-white px-3 py-2 rounded-lg transition">
+                    <i class="fa fa-plus"></i> Cadastrar
+                </button>
+            </div>
+            <div id="listaProdutos" class="space-y-3"></div>
+        </section>
+    </main>
+
+    <!-- MODAL PRODUTO -->
+    <div id="modalProduto" class="fixed inset-0 bg-primary/70 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-md sombra-roxa borda-dourada shadow-2xl">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-cinzaSuave/50 to-douradoClaro/20">
+                <h3 class="font-bold text-lg text-primary">Cadastrar Produto</h3>
+                <button class="fecharModal text-gray-500 hover:text-danger transition">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <form id="formProduto" class="p-4 space-y-3">
+                <div>
+                    <label class="text-sm font-medium text-primary mb-1 block">Código</label>
+                    <input type="text" name="codigo" class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none" required>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-primary mb-1 block">Nome do Item</label>
+                    <input type="text" name="codigo" class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none" required>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-primary mb-1 block">Preço R$</label>
+                    <input type="number" name="preco" step="0.01" min="0" class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none" required>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-primary mb-1 block">Categoria</label>
+                    <select name="categoria" class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                        <option>Refeição</option>
+                        <option>Bebida</option>
+                        <option>Sobremesa</option>
+                        <option>Lanche</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white py-3 rounded-lg font-semibold mt-2 transition">
+                    Salvar Produto
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let produtos = {};
+        let houveAlteracao = false;
+
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+            if(dadosSalvos) {
+                const d = JSON.parse(dadosSalvos);
+                produtos = d.produtos;
+            }
+            atualizarStatusSalvo(false);
+            renderizarProdutos();
+        }
+
+        function salvarTudo() {
+            const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+            const d = dadosSalvos ? JSON.parse(dadosSalvos) : {};
+            d.produtos = produtos;
+            localStorage.setItem('cantinaElianeDados', JSON.stringify(d));
+            atualizarStatusSalvo(false);
+        }
+
+        // ✅ AQUI A ALTERAÇÃO CERTA: NÃO SALVO = PRETO / SALVO = AMARELO
+        function atualizarStatusSalvo(alterado = true) {
+            houveAlteracao = alterado;
+            const el = document.getElementById('statusSalvamento');
+            if(alterado) {
+                // FUNDO PRETO, TEXTO BRANCO, EMOJI ⚠️ MANTIDO
+                el.textContent = "⚠️ Não salvo";
+                el.className = "text-xs bg-black text-white px-2 py-1 rounded-full font-semibold";
+            } else {
+                // FUNDO AMARELO, TEXTO ROXO, EMOJI ✅ MANTIDO
+                el.textContent = "✅ Salvo";
+                el.className = "text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold";
+            }
+        }
+
+        document.getElementById('btnNovoProduto').addEventListener('click', () => {
+            document.getElementById('modalProduto').classList.remove('hidden');
+        });
+
+        document.getElementById('formProduto').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const cod = form.codigo.value;
+            
+            if(produtos[cod]) return alert("Código já existe!");
+
+            produtos[cod] = {
+                codigo: cod,
+                nome: form.nome.value,
+                preco: parseFloat(form.preco.value),
+                categoria: form.categoria.value
+            };
+
+            form.reset();
+            document.getElementById('modalProduto').classList.add('hidden');
+            renderizarProdutos();
+            atualizarStatusSalvo(true);
+        });
+
+        function renderizarProdutos() {
+            const lista = document.getElementById('listaProdutos');
+            lista.innerHTML = "";
+
+            Object.values(produtos).forEach((p) => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-3 rounded-xl sombra-roxa border border-roxoClaro/20 flex justify-between items-center hover:border-primary/40 transition-all";
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-primary">${p.nome}</h4>
+                        <p class="text-xs text-roxoClaro">${p.codigo} • ${p.categoria} • R$ ${p.preco.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <button class="excluir-produto text-danger hover:text-danger/70 transition text-lg" title="Enviar para lixeira">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                lista.appendChild(div);
+
+                div.querySelector('.excluir-produto').addEventListener('click', () => {
+                    if(confirm(`⚠️ Enviar produto para a lixeira?\n"${p.nome}"`)) {
+                        const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+                        const d = dadosSalvos ? JSON.parse(dadosSalvos) : {};
+                        d.lixeira = d.lixeira || { produtos: [], vendas: [] };
+                        d.lixeira.produtos.push({...p, dataExclusao: new Date().toLocaleString()});
+                        delete produtos[p.codigo];
+                        localStorage.setItem('cantinaElianeDados', JSON.stringify(d));
+                        renderizarProdutos();
+                        atualizarStatusSalvo(true);
+                    }
+                });
+            });
+        }
+
+        document.querySelectorAll('.fecharModal').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.fixed').classList.add('hidden'));
+        });
+
+        document.getElementById('btnSalvar').addEventListener('click', salvarTudo);
+
+        window.addEventListener('beforeunload', (e) => {
+            if(houveAlteracao) {
+                e.preventDefault();
+                e.returnValue = "Existem alterações não salvas! Tem certeza que deseja sair?";
+            }
+        });
+
+        carregarDados();
+    </script>
+</body>
+</html>
