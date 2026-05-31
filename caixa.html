@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cantina da Eliane - Caixa e Histórico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6A1B9A', // ROXO = estado NEUTRO / DESLIGADO
+                        secondary: '#9C27B0',
+                        accent: '#F5C518',
+                        roxoClaro: '#CE93D8',
+                        douradoClaro: '#FFE082',
+                        laranjaSuave: '#FF9800',
+                        danger: '#AD1457', // VERMELHO = estado ATIVO / LIGADO (Botão Caixa)
+                        warning: '#FBC02D',
+                        success: '#43A047', // VERDE = estado ATIVO / LIGADO (Botão Cardápio)
+                        neutral: '#212121',
+                        fundo: '#FAF7FC',
+                        cinzaSuave: '#EDE7F6'
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .touch-target { min-height: 48px; min-width: 48px; }
+            .borda-dourada { border: 2px solid #F5C518; }
+            .sombra-roxa { box-shadow: 0 2px 8px rgba(106, 27, 154, 0.15); }
+
+            /* ✅ BOTÃO CAIXA - LÓGICA IGUAL O CARDÁPIO, COR VERMELHA:
+               - DESLIGADO / NÃO ESTOU AQUI: Roxo
+               - Ao clicar: fica Vermelho
+               - LIGADO / ESTOU AQUI: Vermelho fixo
+            */
+            .botao-caixa {
+                @apply bg-primary text-white font-semibold py-3 px-2 rounded-t-lg transition-all duration-200 border-b-2 border-primary;
+            }
+            /* Ao clicar (antes de mudar de página): fica vermelho */
+            .botao-caixa:active, 
+            .botao-caixa:focus {
+                @apply bg-danger border-danger;
+            }
+            /* Quando É a página ativa: fica VERMELHO SEMPRE */
+            .botao-caixa.ativo {
+                @apply bg-danger border-danger !important;
+            }
+
+            /* ✅ BOTÃO SALVAR - LÓGICA CERTA:
+               Normal = Roxo | Ao clicar = Vermelho | Ao soltar = Volta Roxo
+            */
+            .botao-salvar {
+                @apply bg-primary text-white transition-all duration-200;
+            }
+            .botao-salvar:active, 
+            .botao-salvar:focus {
+                @apply bg-danger;
+            }
+
+            /* Outras abas = sempre roxo/neutro */
+            .aba-neutra {
+                @apply text-gray-600 hover:text-secondary transition;
+            }
+        }
+    </style>
+</head>
+<body class="bg-fundo font-sans text-neutral overflow-x-hidden">
+
+    <header class="bg-gradient-to-r from-primary to-secondary text-white px-4 py-4 shadow-lg">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa fa-calculator text-accent"></i> Cantina da Eliane
+                </h1>
+                <p class="text-xs text-roxoClaro/90">Controle de Caixa e Histórico</p>
+            </div>
+            <!-- ✅ ESTILO CORRETO: SALVO = AMARELO / NÃO SALVO = PRETO -->
+            <span id="statusSalvamento" class="text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold">✅ Salvo</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <a href="index.html" class="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30 text-center block">
+                <i class="fa fa-arrow-left mr-1"></i> Voltar
+            </a>
+            <button id="btnSalvar" class="flex-1 py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30 botao-salvar">
+                <i class="fa fa-save mr-1"></i> Salvar
+            </button>
+            <button id="btnZerarDia" class="flex-1 bg-warning/80 hover:bg-warning text-white py-2.5 rounded-lg text-sm font-semibold touch-target transition border border-douradoClaro/30">
+                <i class="fa fa-refresh mr-1"></i> Zerar Dia
+            </button>
+        </div>
+    </header>
+
+    <div class="bg-white border-b border-roxoClaro/30 px-1 shadow-md">
+        <div class="flex overflow-x-auto">
+            <a href="index.html" class="flex-1 py-3 text-sm font-semibold text-center aba-neutra">
+                <i class="fa fa-file-text-o mr-1"></i> Pedidos
+            </a>
+            <a href="cardapio.html" class="flex-1 py-3 text-sm font-semibold text-center aba-neutra">
+                <i class="fa fa-list mr-1"></i> Cardápio
+            </a>
+            <!-- ✅ AQUI: Botão Caixa com classe "ativo" pois ESTAMOS NA PÁGINA DELE -->
+            <button class="flex-1 text-sm text-center botao-caixa ativo" data-aba="caixa">
+                <i class="fa fa-calculator mr-1"></i> Caixa
+            </button>
+        </div>
+    </div>
+
+    <main class="p-4">
+        <!-- RESUMO DO DIA -->
+        <section class="mb-6">
+            <div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 sombra-roxa border border-roxoClaro/20">
+                <h2 class="text-lg font-bold text-primary mb-3 flex items-center gap-2">
+                    <i class="fa fa-bar-chart"></i> Resumo do Dia
+                </h2>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-white/70 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Total Arrecadado</p>
+                        <p id="resumoTotalDia" class="text-xl font-bold text-success">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white/70 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Vendas Realizadas</p>
+                        <p id="resumoQtdVendas" class="text-xl font-bold text-primary">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-white/60 p-2 rounded-lg">
+                        <p class="text-xs text-gray-600">Dinheiro</p>
+                        <p id="resumoDinheiro" class="font-semibold text-secondary">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white/60 p-2 rounded-lg">
+                        <p class="text-xs text-gray-600">Cartão</p>
+                        <p id="resumoCartao" class="font-semibold text-secondary">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white/60 p-2 rounded-lg">
+                        <p class="text-xs text-gray-600">PIX</p>
+                        <p id="resumoPix" class="font-semibold text-secondary">R$ 0,00</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABAS: VENDAS DO DIA E HISTÓRICO GERAL -->
+        <section>
+            <div class="flex border-b border-roxoClaro/30 mb-4">
+                <button class="aba-caixa ativo py-2 px-4 text-sm font-semibold border-b-2 border-primary text-primary" data-alvo="vendasDia">
+                    Vendas do Dia
+                </button>
+                <button class="aba-caixa py-2 px-4 text-sm font-semibold text-gray-600 hover:text-secondary transition" data-alvo="historicoGeral">
+                    Histórico Geral
+                </button>
+            </div>
+
+            <!-- CONTEÚDO VENDAS DO DIA -->
+            <div id="vendasDia" class="conteudo-aba-caixa">
+                <div class="bg-white rounded-xl sombra-roxa border border-roxoClaro/20 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-cinzaSuave/50">
+                                <tr>
+                                    <th class="text-left p-2 text-primary">Data/Hora</th>
+                                    <th class="text-center p-2 text-primary">Pedido</th>
+                                    <th class="text-right p-2 text-primary">Valor</th>
+                                    <th class="text-center p-2 text-primary">Pagamento</th>
+                                    <th class="text-right p-2 text-primary">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaVendasDia" class="divide-y divide-roxoClaro/20">
+                                <tr>
+                                    <td colspan="5" class="p-4 text-center text-gray-400 italic">Nenhuma venda realizada hoje</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTEÚDO HISTÓRICO GERAL -->
+            <div id="historicoGeral" class="conteudo-aba-caixa hidden">
+                <div class="bg-white rounded-xl sombra-roxa border border-roxoClaro/20 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-cinzaSuave/50">
+                                <tr>
+                                    <th class="text-left p-2 text-primary">Data/Hora</th>
+                                    <th class="text-center p-2 text-primary">Pedido</th>
+                                    <th class="text-right p-2 text-primary">Valor</th>
+                                    <th class="text-center p-2 text-primary">Pagamento</th>
+                                    <th class="text-left p-2 text-primary">Cliente</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaHistoricoGeral" class="divide-y divide-roxoClaro/20">
+                                <tr>
+                                    <td colspan="5" class="p-4 text-center text-gray-400 italic">Histórico vazio</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DETALHES DA VENDA -->
+    <div id="modalDetalhesVenda" class="fixed inset-0 bg-primary/70 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-md sombra-roxa borda-dourada shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-cinzaSuave/50 to-douradoClaro/20">
+                <h3 class="font-bold text-lg text-primary">O que foi vendido</h3>
+                <button class="fecharModal text-gray-500 hover:text-danger transition">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                        <p class="text-gray-500">Data/Hora:</p>
+                        <p id="detalheData" class="font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Forma de Pagamento:</p>
+                        <p id="detalhePagamento" class="font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Atendente:</p>
+                        <p id="detalheAtendente" class="font-medium"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-gray-500">Cliente:</p>
+                        <p id="detalheCliente" class="font-medium"></p>
+                    </div>
+                </div>
+
+                <div class="border-t border-b border-roxoClaro/20 py-3">
+                    <p class="font-semibold text-primary mb-2">📦 Itens Vendidos:</p>
+                    <ul id="detalheItens" class="space-y-2 text-sm pl-2 bg-cinzaSuave/30 p-2 rounded-lg"></ul>
+                </div>
+
+                <div class="flex justify-between font-bold text-lg text-primary">
+                    <span>Total:</span>
+                    <span id="detalheTotal" class="text-secondary"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let vendasDia = [];
+        let historicoCompleto = [];
+        let lixeira = { produtos: [], vendas: [] };
+        let totalDia = 0;
+        let houveAlteracao = false;
+        let vendaEmDetalhe = null;
+
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+            if(dadosSalvos) {
+                const d = JSON.parse(dadosSalvos);
+                vendasDia = d.vendas || [];
+                historicoCompleto = d.historico || [];
+                lixeira = d.lixeira || { produtos: [], vendas: [] };
+                totalDia = d.totalDia || 0;
+            }
+            atualizarStatusSalvo(false);
+            atualizarResumo();
+            renderizarVendasDia();
+            renderizarHistorico();
+        }
+
+        function salvarTudo() {
+            const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+            const d = dadosSalvos ? JSON.parse(dadosSalvos) : {};
+            d.vendas = vendasDia;
+            d.historico = historicoCompleto;
+            d.lixeira = lixeira;
+            d.totalDia = totalDia;
+            localStorage.setItem('cantinaElianeDados', JSON.stringify(d));
+            atualizarStatusSalvo(false);
+            return true;
+        }
+
+        // ✅ AQUI A ALTERAÇÃO CERTA: NÃO SALVO = PRETO / SALVO = AMARELO
+        function atualizarStatusSalvo(alterado = true) {
+            houveAlteracao = alterado;
+            const el = document.getElementById('statusSalvamento');
+            if(alterado) {
+                // FUNDO PRETO, TEXTO BRANCO, EMOJI AMARELO
+                el.textContent = "⚠️ Não salvo";
+                el.className = "text-xs bg-black text-white px-2 py-1 rounded-full font-semibold";
+            } else {
+                // FUNDO AMARELO, TEXTO ROXO, EMOJI VERDE ✅
+                el.textContent = "✅ Salvo";
+                el.className = "text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold";
+            }
+        }
+
+        function atualizarResumo() {
+            document.getElementById('resumoTotalDia').textContent = `R$ ${totalDia.toFixed(2)}`;
+            document.getElementById('resumoQtdVendas').textContent = vendasDia.length;
+
+            const totaisForma = { Dinheiro: 0, Cartão: 0, PIX: 0 };
+            vendasDia.forEach(v => {
+                if(totaisForma.hasOwnProperty(v.forma)) totaisForma[v.forma] += v.valor;
+            });
+
+            document.getElementById('resumoDinheiro').textContent = `R$ ${totaisForma.Dinheiro.toFixed(2)}`;
+            document.getElementById('resumoCartao').textContent = `R$ ${totaisForma.Cartão.toFixed(2)}`;
+            document.getElementById('resumoPix').textContent = `R$ ${totaisForma.PIX.toFixed(2)}`;
+        }
+
+        function renderizarVendasDia() {
+            const tbody = document.getElementById('listaVendasDia');
+            tbody.innerHTML = "";
+
+            if(vendasDia.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Nenhuma venda realizada hoje</td></tr>`;
+                return;
+            }
+
+            vendasDia.forEach((venda, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-cinzaSuave/30 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-2 text-xs">${venda.data}</td>
+                    <td class="p-2 text-center">Pedido Nº ${venda.pedido || '---'}</td>
+                    <td class="p-2 text-right font-medium text-secondary">R$ ${venda.valor.toFixed(2)}</td>
+                    <td class="p-2 text-center text-xs">
+                        ${venda.forma}
+                        <button class="ver-itens text-primary hover:text-secondary transition ml-1" title="Ver o que foi vendido">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </td>
+                    <td class="p-2 text-right">
+                        <button class="excluir-venda text-danger hover:text-danger/70 transition" title="Remover venda">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                // 👁️ VER DETALHES DOS ITENS
+                tr.querySelector('.ver-itens').addEventListener('click', () => {
+                    vendaEmDetalhe = venda;
+                    document.getElementById('detalheData').textContent = venda.data;
+                    document.getElementById('detalhePagamento').textContent = venda.forma;
+                    document.getElementById('detalheAtendente').textContent = venda.atendente || 'Não informado';
+                    document.getElementById('detalheCliente').textContent = venda.cliente || 'Não informado';
+                    
+                    const listaItens = document.getElementById('detalheItens');
+                    listaItens.innerHTML = "";
+
+                    if(venda.itens && venda.itens.length > 0) {
+                        venda.itens.forEach(item => {
+                            const li = document.createElement('li');
+                            li.className = "flex justify-between items-center border-b border-roxoClaro/20 pb-1";
+                            li.innerHTML = `
+                                <span>${item.qtd}x ${item.nome}</span>
+                                <span class="font-medium">R$ ${item.subtotal.toFixed(2)}</span>
+                            `;
+                            listaItens.appendChild(li);
+                        });
+                    } else {
+                        listaItens.innerHTML = "<li class='italic text-gray-400'>Nenhum item registrado</li>";
+                    }
+
+                    document.getElementById('detalheTotal').textContent = `R$ ${venda.valor.toFixed(2)}`;
+                    document.getElementById('modalDetalhesVenda').classList.remove('hidden');
+                });
+
+                // 🗑️ EXCLUIR VENDA
+                tr.querySelector('.excluir-venda').addEventListener('click', () => {
+                    if(confirm(`⚠️ Tem certeza que deseja remover esta venda?\nPedido Nº ${venda.pedido || '---'}`)) {
+                        lixeira.vendas.push({...venda, dataExclusao: new Date().toLocaleString()});
+                        totalDia -= venda.valor;
+                        vendasDia.splice(idx, 1);
+                        atualizarResumo();
+                        renderizarVendasDia();
+                        atualizarStatusSalvo(true);
+                    }
+                });
+            });
+        }
+
+        function renderizarHistorico() {
+            const tbody = document.getElementById('listaHistoricoGeral');
+            tbody.innerHTML = "";
+
+            if(historicoCompleto.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Histórico vazio</td></tr>`;
+                return;
+            }
+
+            historicoCompleto.slice().reverse().forEach(venda => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-cinzaSuave/30 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-2 text-xs">${venda.data}</td>
+                    <td class="p-2 text-center">Pedido Nº ${venda.pedido || '---'}</td>
+                    <td class="p-2 text-right font-medium text-secondary">R$ ${venda.valor.toFixed(2)}</td>
+                    <td class="p-2 text-center text-xs">${venda.forma}</td>
+                    <td class="p-2 text-xs">${venda.cliente || "Não informado"}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Alternar Abas
+        document.querySelectorAll('.aba-caixa').forEach(aba => {
+            aba.addEventListener('click', () => {
+                document.querySelectorAll('.aba-caixa').forEach(a => {
+                    a.classList.remove('ativo', 'border-primary', 'text-primary');
+                    a.classList.add('text-gray-600');
+                });
+                aba.classList.add('ativo', 'border-primary', 'text-primary');
+                aba.classList.remove('text-gray-600');
+
+                document.querySelectorAll('.conteudo-aba-caixa').forEach(c => c.classList.add('hidden'));
+                document.getElementById(aba.dataset.alvo).classList.remove('hidden');
+            });
+        });
+
+        // Zerar Dia
+        document.getElementById('btnZerarDia').addEventListener('click', () => {
+            if(confirm("⚠️ TEM CERTEZA?\nIsso limpa todas as vendas do dia e zera o caixa.\nO histórico geral será mantido.")) {
+                vendasDia = [];
+                totalDia = 0;
+                atualizarResumo();
+                renderizarVendasDia();
+                atualizarStatusSalvo(true);
+            }
+        });
+
+        // Fechar Modais
+        document.querySelectorAll('.fecharModal').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.fixed').classList.add('hidden'));
+        });
+
+        // ✅ SALVAR: ESPERA O BOTÃO FICAR VERMELHO PRIMEIRO, DEPOIS ATUALIZA
+        document.getElementById('btnSalvar').addEventListener('click', () => {
+            setTimeout(() => {
+                salvarTudo();
+                alert('✅ Dados salvos com sucesso!');
+            }, 150);
+        });
+
+        // Aviso de alterações
+        window.addEventListener('beforeunload', (e) => {
+            if(houveAlteracao) {
+                e.preventDefault();
+                e.returnValue = "Existem alterações não salvas! Tem certeza que deseja sair?";
+            }
+        });
+
+        carregarDados();
+    </script>
+</body>
+</html>
