@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cantina da Eliane - Pedidos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6A1B9A',    // Roxo principal
+                        secondary: '#9C27B0',  // Roxo claro
+                        accent: '#F5C518',     // Amarelo/dourado
+                        roxoClaro: '#CE93D8',
+                        douradoClaro: '#FFE082',
+                        laranjaSuave: '#FF9800',
+                        danger: '#AD1457',     // VERMELHO
+                        azulAba: '#1565C0',    // AZUL das abas
+                        verdeAba: '#43A047',   // VERDE das abas
+                        vermelhoAba: '#AD1457',// VERMELHO das abas
+                        warning: '#FBC02D',
+                        success: '#43A047',    // VERDE (para o texto Vendido)
+                        neutral: '#212121',
+                        fundo: '#FAF7FC',
+                        cinzaSuave: '#EDE7F6'
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .touch-target { min-height: 48px; min-width: 48px; }
+            .borda-dourada { border: 2px solid #F5C518; }
+            .sombra-roxa { box-shadow: 0 2px 8px rgba(106, 27, 154, 0.15); }
+
+            /* ✅ BOTÕES DE AÇÃO: CORRETO AGORA! FICA VERMELHO AO CLICAR */
+            .btn-acao {
+                @apply flex-1 py-2.5 rounded-lg text-sm font-semibold touch-target transition-all duration-100 border;
+                @apply bg-white/20 text-white border-douradoClaro/30;
+            }
+            /* 🔴 AO PRESSIONAR: VERMELHO MESMO, SEM FALHA */
+            .btn-acao:active,
+            .btn-acao:focus {
+                @apply bg-danger border-danger !important;
+            }
+
+            /* ✅ BOTÕES DE ABA: COR FIXA, NÃO MUDA AO CLICAR */
+            .aba {
+                @apply flex-1 py-3 text-sm font-semibold text-center transition-all rounded-t-lg;
+                @apply bg-white text-gray-600 hover:bg-cinzaSuave/40 border-b-2 border-transparent;
+            }
+            .aba.pedidos.ativa { @apply bg-azulAba text-white border-azulAba; }
+            .aba.cardapio.ativa { @apply bg-verdeAba text-white border-verdeAba; }
+            .aba.caixa.ativa { @apply bg-vermelhoAba text-white border-vermelhoAba; }
+
+            .lixeira-individual {
+                @apply absolute top-2 right-2 text-danger/70 hover:text-danger transition-all cursor-pointer;
+            }
+
+            /* ✅ TELA DA LIXEIRA EM TELA CHEIA */
+            .tela-cheia-lixeira {
+                @apply fixed inset-0 w-screen h-screen bg-white z-[9999] overflow-y-auto p-4;
+            }
+        }
+    </style>
+</head>
+<body class="bg-fundo font-sans text-neutral overflow-x-hidden">
+
+    <header id="cabecalhoPrincipal" class="bg-gradient-to-r from-primary to-secondary text-white px-4 py-4 shadow-lg">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa fa-cutlery text-accent"></i> Cantina da Eliane
+                </h1>
+                <p class="text-xs text-roxoClaro/90">Atendimento - Pedidos</p>
+            </div>
+            <!-- ✅ AQUI ESTÁ A ALTERAÇÃO: FUNDO PRETO, TEXTO BRANCO, EMOJI ORIGINAL -->
+            <span id="statusSalvamento" class="text-xs bg-black text-white px-2 py-1 rounded-full font-semibold">⚠️ Não salvo</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <button id="btnSalvar" class="btn-acao">
+                <i class="fa fa-save mr-1"></i> Salvar
+            </button>
+            <button id="btnLixeira" class="btn-acao">
+                <i class="fa fa-trash mr-1"></i> Lixeira
+            </button>
+            <button id="btnLimparTudo" class="btn-acao bg-warning/20 hover:bg-warning/30 text-white">
+                <i class="fa fa-refresh mr-1"></i> Limpar
+            </button>
+        </div>
+    </header>
+
+    <div id="areaAbas" class="bg-white border-b border-roxoClaro/30 px-1 shadow-md">
+        <div class="flex overflow-x-auto">
+            <a href="index.html" class="aba pedidos ativa">
+                <i class="fa fa-table mr-1"></i> Pedidos
+            </a>
+            <a href="cardapio.html" class="aba cardapio">
+                <i class="fa fa-list mr-1"></i> Cardápio
+            </a>
+            <a href="caixa.html" class="aba caixa">
+                <i class="fa fa-calculator mr-1"></i> Caixa
+            </a>
+        </div>
+    </div>
+
+    <main id="conteudoPrincipal" class="p-4">
+        <section id="conteudo-pedidos" class="conteudo-aba">
+            <div class="mb-4 bg-white p-3 rounded-xl border border-roxoClaro/20 shadow-sm">
+                <div class="relative">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <!-- ✅ SÓ TROQUEI A FRASE, RESTO TUDO IGUAL -->
+                    <input type="text" id="campoBuscaPedido" placeholder="Lançar vendas ⚠️🖥️💵" class="w-full pl-9 pr-3 py-2 border border-roxoClaro/40 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                </div>
+                <div id="mensagemErroBusca" class="text-xs text-center text-red-500 mt-1 hidden">❌ Pedido não existe</div>
+            </div>
+
+            <div id="gradePedidos" class="grid grid-cols-3 gap-3 mb-6"></div>
+
+            <div id="areaPedidoDetalhe" class="hidden bg-white rounded-xl sombra-roxa p-4 mb-6 border border-roxoClaro/20">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-primary flex items-center gap-2">
+                        <i class="fa fa-shopping-cart text-accent"></i> Atendimento: <span id="tituloPedido">Pedido Nº 1</span>
+                    </h2>
+                    <button id="btnFecharPedido" class="text-gray-500 hover:text-danger transition">
+                        <i class="fa fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="detalhesVenda" class="hidden bg-gradient-to-r from-douradoClaro/30 to-accent/20 p-3 rounded-lg mb-4 border border-accent/30">
+                    <h4 class="font-bold text-primary mb-2 text-sm">📋 Dados da Venda</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div><strong>Horário:</strong> <span id="detHorario"></span></div>
+                        <div><strong>Atendente:</strong> <span id="detAtendente"></span></div>
+                        <div><strong>Cliente:</strong> <span id="detCliente"></span></div>
+                        <div><strong>Forma Pagto:</strong> <span id="detPagto"></span></div>
+                        <div><strong>Valor Total:</strong> <span id="detValor" class="font-bold text-danger"></span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-xs font-medium text-primary mb-1 block">Atendente</label>
+                        <input type="text" id="nomeAtendente" placeholder="Seu nome" 
+                            class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-primary mb-1 block">Cliente</label>
+                        <input type="text" id="nomeCliente" placeholder="Nome do cliente" 
+                            class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="buscarItem" placeholder="Digite CÓDIGO ou NOME do item..." 
+                        class="flex-1 px-3 py-2 border border-roxoClaro/40 rounded-lg text-base focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    <button id="btnAdicionarItem" class="bg-black text-white px-4 py-2 rounded-lg font-semibold transition hover:bg-gray-900">
+                        Salvar
+                    </button>
+                </div>
+
+                <div class="border border-roxoClaro/30 rounded-lg mb-4 max-h-[250px] overflow-y-auto scrollbar-hide">
+                    <table class="w-full text-sm">
+                        <thead class="bg-cinzaSuave/50">
+                            <tr>
+                                <th class="text-left p-2 text-primary">Item</th>
+                                <th class="text-center p-2 text-primary">Qtd</th>
+                                <th class="text-right p-2 text-primary">Valor</th>
+                                <th class="text-center p-2 text-primary">Remover</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaItensPedido" class="divide-y divide-roxoClaro/20">
+                            <tr><td colspan="4" class="p-3 text-center text-gray-400">Nenhum item adicionado</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-gradient-to-r from-cinzaSuave/50 to-douradoClaro/20 p-3 rounded-lg mb-4 border border-roxoClaro/20">
+                    <div class="flex justify-between font-bold text-lg text-primary">
+                        <span>Total da Conta:</span>
+                        <span id="totalConta" class="text-secondary">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <button id="btnFecharConta" class="w-full bg-success hover:bg-success/90 text-white py-3 rounded-lg font-semibold touch-target transition">
+                    <i class="fa fa-money mr-1"></i> Fechar Conta
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <div id="modalPagamento" class="fixed inset-0 bg-primary/70 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-md sombra-roxa borda-dourada shadow-2xl">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-cinzaSuave/50 to-douradoClaro/20">
+                <h3 class="font-bold text-lg text-primary">Fechar Conta</h3>
+                <button class="fecharModal text-gray-500 hover:text-danger transition">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-4">
+                <div class="text-center p-3 bg-gradient-to-r from-douradoClaro/30 to-accent/20 rounded-lg">
+                    <p class="text-sm text-gray-600">Valor Total</p>
+                    <p id="valorPagamento" class="text-2xl font-bold text-secondary">R$ 0,00</p>
+                </div>
+                <div>
+                    <p class="font-medium text-primary mb-2">Forma de Pagamento</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="border border-roxoClaro/40 rounded-lg p-2 text-center cursor-pointer hover:border-primary hover:bg-cinzaSuave/30 transition">
+                            <input type="radio" name="formaPagamento" value="Dinheiro" class="mr-1 text-primary" checked>
+                            <span class="text-sm">Dinheiro</span>
+                        </label>
+                        <label class="border border-roxoClaro/40 rounded-lg p-2 text-center cursor-pointer hover:border-primary hover:bg-cinzaSuave/30 transition">
+                            <input type="radio" name="formaPagamento" value="Cartão" class="mr-1 text-primary">
+                            <span class="text-sm">Cartão</span>
+                        </label>
+                        <label class="border border-roxoClaro/40 rounded-lg p-2 text-center cursor-pointer hover:border-primary hover:bg-cinzaSuave/30 transition">
+                            <input type="radio" name="formaPagamento" value="PIX" class="mr-1 text-primary">
+                            <span class="text-sm">PIX</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="trocoArea" class="p-3 bg-cinzaSuave/40 rounded-lg hidden border border-roxoClaro/20">
+                    <label class="text-sm font-medium text-primary mb-1 block">Valor Recebido</label>
+                    <input type="number" id="valorRecebido" step="0.01" min="0" class="w-full px-3 py-2 border border-roxoClaro/40 rounded-lg mb-2 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none">
+                    <div class="flex justify-between font-medium">
+                        <span>Troco:</span>
+                        <span id="valorTroco" class="text-success font-bold">R$ 0,00</span>
+                    </div>
+                </div>
+                <button id="btnConfirmarPagamento" class="w-full bg-gradient-to-r from-success to-success/80 hover:from-success/80 hover:to-success text-white py-3 rounded-lg font-semibold transition">
+                    Confirmar e Finalizar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalAvisoSalvar" class="fixed inset-0 bg-primary/70 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-md sombra-roxa borda-dourada shadow-2xl">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-warning/10 to-accent/20">
+                <h3 class="font-bold text-lg text-primary flex items-center gap-2">
+                    <i class="fa fa-exclamation-triangle text-warning"></i> Atenção!
+                </h3>
+                <button class="fecharModal text-gray-500 hover:text-danger transition">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-4 text-center">
+                <div class="p-3 bg-gradient-to-r from-douradoClaro/30 to-accent/20 rounded-lg">
+                    <p class="text-base text-gray-700 leading-relaxed">
+                        ✅ Pedido finalizado com sucesso!
+                        <br><br>
+                        <strong class="text-danger">IMPORTANTE:</strong> <br>
+                        Clique no botão abaixo para SALVAR tudo antes de mudar de aba. <br><br>
+                        Se não salvar, <strong>todas as alterações serão perdidas</strong>.
+                    </p>
+                </div>
+                <button id="btnSalvarDiretoTela" class="w-full bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white py-3 rounded-lg font-semibold transition">
+                    💾 Salvar e voltar ao sistema
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ LIXEIRA AGORA EM TELA CHEIA -->
+    <div id="telaLixeira" class="hidden tela-cheia-lixeira">
+        <div class="bg-white rounded-xl sombra-roxa borda-dourada shadow-2xl p-4">
+            <div class="p-4 border-b border-roxoClaro/30 flex justify-between items-center bg-gradient-to-r from-danger/10 to-danger/20 -m-4 mb-4 rounded-t-xl">
+                <h3 class="font-bold text-lg text-danger flex items-center gap-2">
+                    <i class="fa fa-trash"></i> Lixeira Geral
+                </h3>
+                <button id="btnVoltarLixeira" class="text-gray-500 hover:text-danger transition bg-white/50 rounded-full p-2">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Itens excluídos podem ser restaurados ou apagados definitivamente.</p>
+            
+            <div class="flex justify-between items-center mb-2">
+                <h4 class="font-semibold text-primary">Produtos Excluídos</h4>
+                <span id="contadorProdutos" class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">0 itens</span>
+            </div>
+            <div id="listaLixeiraProdutos" class="space-y-3 mb-6 border-b pb-4"><p class="text-sm text-gray-400 italic">Vazia</p></div>
+            
+            <div class="flex justify-between items-center mb-2">
+                <h4 class="font-semibold text-primary">Vendas Excluídas</h4>
+                <span id="contadorVendas" class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">0 itens</span>
+            </div>
+            <div id="listaLixeiraVendas" class="space-y-3"><p class="text-sm text-gray-400 italic">Vazia</p></div>
+
+            <!-- ✅ NOVO BOTÃO LIMPAR TUDO DENTRO DA LIXEIRA -->
+            <div class="mt-6 text-center">
+                <button id="btnLimparTudoLixeira" class="bg-danger hover:bg-danger/90 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-md">
+                    <i class="fa fa-trash mr-2"></i> Limpar Tudo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let produtos = {};
+        let pedidos = {};
+        let vendasDia = [];
+        let historicoCompleto = [];
+        let lixeira = { produtos: [], vendas: [] };
+        let totalDia = 0;
+        let houveAlteracao = false;
+        let pedidoAtual = null;
+        const TOTAL_PEDIDOS = 200;
+
+        const dadosPadrao = {
+            produtos: {
+                "001": { codigo: "001", nome: "Frango com ora-pro-nóbis", preco: 21.99, categoria: "Refeição" },
+                "002": { codigo: "002", nome: "Arroz temperado", preco: 20.99, categoria: "Refeição" },
+                "003": { codigo: "003", nome: "Feijoada", preco: 20.00, categoria: "Refeição" },
+                "004": { codigo: "004", nome: "Feijão tropeiro", preco: 25.99, categoria: "Refeição" }
+            },
+            pedidos: {},
+            vendas: [],
+            historico: [],
+            lixeira: { produtos: [], vendas: [] },
+            totalDia: 0
+        };
+
+        for(let i=1; i<=TOTAL_PEDIDOS; i++){
+            dadosPadrao.pedidos[i] = { 
+                id: i, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "", horarioVenda: "", formaPagamento: ""
+            };
+        }
+
+        document.querySelectorAll('.aba').forEach(aba => {
+            aba.addEventListener('click', (e) => {
+                if(aba.getAttribute('href') !== '#') {
+                    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+                    aba.classList.add('ativa');
+                }
+            });
+        });
+
+        document.getElementById('btnLixeira').addEventListener('click', () => {
+            atualizarLixeira();
+            // ✅ Esconde tudo ao abrir a lixeira
+            document.getElementById('cabecalhoPrincipal').classList.add('hidden');
+            document.getElementById('areaAbas').classList.add('hidden');
+            document.getElementById('conteudoPrincipal').classList.add('hidden');
+            document.getElementById('telaLixeira').classList.remove('hidden');
+        });
+
+        document.getElementById('btnVoltarLixeira').addEventListener('click', () => {
+            // ✅ Mostra tudo ao voltar
+            document.getElementById('cabecalhoPrincipal').classList.remove('hidden');
+            document.getElementById('areaAbas').classList.remove('hidden');
+            document.getElementById('conteudoPrincipal').classList.remove('hidden');
+            document.getElementById('telaLixeira').classList.add('hidden');
+        });
+
+        // ✅ FUNÇÃO LIMPAR TUDO DA LIXEIRA
+        document.getElementById('btnLimparTudoLixeira').addEventListener('click', () => {
+            if(confirm("⚠️ ATENÇÃO: Todos os itens da lixeira serão apagados DEFINITIVAMENTE! Não tem volta. Continuar?")) {
+                lixeira.produtos = [];
+                lixeira.vendas = [];
+                atualizarLixeira();
+                atualizarStatusSalvo(true);
+                salvarTudo();
+                alert("✅ Lixeira esvaziada com sucesso!");
+            }
+        });
+
+        function limparTudo() {
+            if(confirm("⚠️ Tem certeza que quer limpAR TODOS os pedidos? Essa ação não pode ser desfeita!")) {
+                Object.values(pedidos).forEach(p => {
+                    p.pedidos = [];
+                    p.total = 0;
+                    p.cliente = "";
+                    p.atendente = "";
+                    p.horarioVenda = "";
+                    p.formaPagamento = "";
+                    p.status = "livre";
+                });
+                atualizarStatusSalvo(true);
+                renderizarPedidos();
+                document.getElementById('areaPedidoDetalhe').classList.add('hidden');
+            }
+        }
+        document.getElementById('btnLimparTudo').addEventListener('click', limparTudo);
+
+        function limparPedidoIndividual(id) {
+            if(confirm(`🗑️ Limpar APENAS o Pedido Nº ${id}?`)) {
+                const p = pedidos[id];
+                p.pedidos = [];
+                p.total = 0;
+                p.cliente = "";
+                p.atendente = "";
+                p.horarioVenda = "";
+                p.formaPagamento = "";
+                p.status = "livre";
+
+                atualizarStatusSalvo(true);
+                renderizarPedidos();
+                if(pedidoAtual === id) document.getElementById('areaPedidoDetalhe').classList.add('hidden');
+            }
+        }
+
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('cantinaElianeDados');
+            if(dadosSalvos) {
+                const d = JSON.parse(dadosSalvos);
+                produtos = d.produtos;
+                pedidos = d.pedidos || {};
+                
+                for(let i=1; i<=TOTAL_PEDIDOS; i++){
+                    if(!pedidos[i]) pedidos[i] = { id: i, status: "livre", pedidos: [], total: 0, cliente: "", atendente: "", horarioVenda: "", formaPagamento: "" };
+                }
+                
+                vendasDia = d.vendas;
+                historicoCompleto = d.historico || [];
+                lixeira = d.lixeira || { produtos: [], vendas: [] };
+                totalDia = d.totalDia;
+            } else {
+                produtos = dadosPadrao.produtos;
+                pedidos = dadosPadrao.pedidos;
+                vendasDia = dadosPadrao.vendas;
+                historicoCompleto = dadosPadrao.historico;
+                lixeira = dadosPadrao.lixeira;
+                totalDia = dadosPadrao.totalDia;
+                salvarTudo();
+            }
+            atualizarStatusSalvo(false);
+            renderizarPedidos();
+        }
+
+        function salvarTudo() {
+            const dados = { produtos, pedidos, vendas: vendasDia, historico: historicoCompleto, lixeira, totalDia };
+            localStorage.setItem('cantinaElianeDados', JSON.stringify(dados));
+            atualizarStatusSalvo(false);
+            return true;
+        }
+
+        function atualizarStatusSalvo(alterado = true) {
+            houveAlteracao = alterado;
+            const el = document.getElementById('statusSalvamento');
+            if (alterado) {
+                // ✅ Quando NÃO salvo: FUNDO PRETO, TEXTO BRANCO, EMOJI AMARELO
+                el.textContent = "⚠️ Não salvo";
+                el.className = "text-xs bg-black text-white px-2 py-1 rounded-full font-semibold";
+            } else {
+                // ✅ Quando SALVO: continua o estilo original
+                el.textContent = "✅ Salvo";
+                el.className = "text-xs bg-accent text-primary px-2 py-1 rounded-full font-semibold";
+            }
+        }
+
+        function renderizarPedidos(filtro = '') {
+            const grade = document.getElementById('gradePedidos');
+            grade.innerHTML = '';
+            let temResultado = false;
+
+            Object.values(pedidos).forEach(pedido => {
+                if(filtro !== '' && pedido.id.toString() !== filtro) return;
+                temResultado = true;
+
+                const div = document.createElement('div');
+                div.className = `relative bg-white rounded-xl sombra-roxa border-2 p-3 text-center pedido-item hover:border-primary/60 transition-all cursor-pointer ${pedido.status === 'vendido' ? 'border-success' : 'border-cinzaSuave'}`;
+                div.dataset.pedido = pedido.id;
+
+                div.innerHTML = `
+                    <i class="fa fa-trash lixeira-individual" title="Limpar apenas este pedido"></i>
+                    <p class="text-xs text-gray-500">Pedido</p>
+                    <h3 class="font-bold text-lg text-primary my-1">Nº ${pedido.id}</h3>
+                    <p class="text-sm font-medium ${pedido.status === 'vendido' ? 'text-success font-bold' : 'text-gray-500'}">
+                        ${pedido.status === 'vendido' ? 'Vendido' : 'Aberto'}
+                    </p>
+                `;
+
+                div.querySelector('.lixeira-individual').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    limparPedidoIndividual(pedido.id);
+                });
+
+                div.addEventListener('click', () => abrirPedido(pedido.id));
+                grade.appendChild(div);
+            });
+
+            document.getElementById('mensagemErroBusca').classList.toggle('hidden', temResultado);
+        }
+
+        function abrirPedido(id) {
+            pedidoAtual = parseInt(id);
+            const p = pedidos[pedidoAtual];
+            
+            document.getElementById('tituloPedido').textContent = `Pedido Nº ${pedidoAtual}`;
+            document.getElementById('nomeCliente').value = p.cliente || "";
+            document.getElementById('nomeAtendente').value = p.atendente || "";
+
+            if(p.status === 'vendido') {
+                document.getElementById('detalhesVenda').classList.remove('hidden');
+                document.getElementById('detHorario').textContent = p.horarioVenda;
+                document.getElementById('detAtendente').textContent = p.atendente;
+                document.getElementById('detCliente').textContent = p.cliente;
+                document.getElementById('detPagto').textContent = p.formaPagamento;
+                document.getElementById('detValor').textContent = `R$ ${p.total.toFixed(2)}`;
+            } else {
+                document.getElementById('detalhesVenda').classList.add('hidden');
+            }
+
+            document.getElementById('areaPedidoDetalhe').classList.remove('hidden');
+            atualizarItensPedido();
+        }
+
+        document.getElementById('campoBuscaPedido').addEventListener('input', (e) => {
+            const termo = e.target.value.trim();
+            renderizarPedidos(termo);
+        });
+
+        document.getElementById('btnFecharPedido').addEventListener('click', () => {
+            if(pedidoAtual) {
+                pedidos[pedidoAtual].cliente = document.getElementById('nomeCliente').value;
+                pedidos[pedidoAtual].atendente = document.getElementById('nomeAtendente').value;
+                atualizarStatusSalvo(true);
+            }
+            document.getElementById('areaPedidoDetalhe').classList.add('hidden');
+            pedidoAtual = null;
+        });
+
+        document.getElementById('btnAdicionarItem').addEventListener('click', () => {
+            const termo = document.getElementById('buscarItem').value.trim().toLowerCase();
+            if(!termo || !pedidoAtual || pedidos[pedidoAtual].status === 'vendido') return alert("Esse pedido já foi vendido ou busca está vazia!");
+
+            let encontrado = null;
+
+            if(produtos[termo.padStart(3, '0')]) {
+                encontrado = produtos[termo.padStart(3, '0')];
+            } 
+            else {
+                Object.values(produtos).forEach(p => {
+                    if(p.nome.toLowerCase().includes(termo)) {
+                        encontrado = p;
+                    }
+                });
+            }
+
+            if(encontrado) {
+                pedidos[pedidoAtual].pedidos.push({...encontrado, qtd: 1, subtotal: encontrado.preco});
+                pedidos[pedidoAtual].total = pedidos[pedidoAtual].pedidos.reduce((s,i) => s + i.subtotal, 0);
+                atualizarItensPedido();
+                atualizarStatusSalvo(true);
+                document.getElementById('buscarItem').value = "";
+            } else {
+                alert("❌ Item não cadastrado! Verifique o código ou o nome.");
+            }
+        });
+
+        function atualizarItensPedido() {
+            const tbody = document.getElementById('listaItensPedido');
+            const itens = pedidos[pedidoAtual].pedidos;
+            tbody.innerHTML = "";
+
+            if(itens.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">Nenhum item adicionado</td></tr>`;
+            } else {
+                itens.forEach((item, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-cinzaSuave/30 transition-colors";
+                    tr.innerHTML = `
+                        <td class="p-2"><div class="font-medium">${item.nome}</div><div class="text-xs text-roxoClaro">Cód: ${item.codigo} • ${item.categoria}</div></td>
+                        <td class="p-2 text-center"><div class="flex items-center justify-center gap-1"><button class="diminuir-qtd w-7 h-7 rounded bg-roxoClaro/20 hover:bg-roxoClaro/40 text-primary font-bold transition">-</button><span class="font-semibold">${item.qtd}</span><button class="aumentar-qtd w-7 h-7 rounded bg-roxoClaro/20 hover:bg-roxoClaro/40 text-primary font-bold transition">+</button></div></td>
+                        <td class="p-2 text-right font-medium text-secondary">R$ ${item.subtotal.toFixed(2)}</td>
+                        <td class="p-2 text-center"><button class="remover-item text-danger hover:text-danger/70 transition text-lg"><i class="fa fa-trash"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    tr.querySelector('.aumentar-qtd').addEventListener('click', () => {
+                        item.qtd++; item.subtotal = item.qtd * item.preco; pedidos[pedidoAtual].total += item.preco; atualizarItensPedido(); atualizarStatusSalvo(true);
+                    });
+                    tr.querySelector('.diminuir-qtd').addEventListener('click', () => {
+                        if(item.qtd > 1) { item.qtd--; item.subtotal = item.qtd * item.preco; pedidos[pedidoAtual].total -= item.preco; atualizarItensPedido(); atualizarStatusSalvo(true); }
+                    });
+                    tr.querySelector('.remover-item').addEventListener('click', () => {
+                        if(confirm('Remover este item da conta?')) { pedidos[pedidoAtual].pedidos.splice(idx, 1); pedidos[pedidoAtual].total = pedidos[pedidoAtual].pedidos.reduce((s,i) => s + i.subtotal, 0); atualizarItensPedido(); atualizarStatusSalvo(true); }
+                    });
+                });
+            }
+            document.getElementById('totalConta').textContent = `R$ ${pedidos[pedidoAtual].total.toFixed(2)}`;
+        }
+
+        document.getElementById('btnFecharConta').addEventListener('click', () => {
+            if(pedidos[pedidoAtual].total <= 0) return alert("Conta vazia!");
+            if(pedidos[pedidoAtual].status === 'vendido') return alert("Pedido já vendido!");
+            
+            pedidos[pedidoAtual].cliente = document.getElementById('nomeCliente').value || "Não informado";
+            pedidos[pedidoAtual].atendente = document.getElementById('nomeAtendente').value || "Não informado";
+
+            document.getElementById('valorPagamento').textContent = `R$ ${pedidos[pedidoAtual].total.toFixed(2)}`;
+            document.getElementById('modalPagamento').classList.remove('hidden');
+            
+            document.querySelectorAll('input[name="formaPagamento"]').forEach(r => {
+                r.addEventListener('change', () => {
+                    document.getElementById('trocoArea').classList.toggle('hidden', r.value !== "Dinheiro");
+                });
+            });
+
+            document.getElementById('valorRecebido').addEventListener('input', () => {
+                const total = pedidos[pedidoAtual].total;
+                const recebido = parseFloat(document.getElementById('valorRecebido').value) || 0;
+                const troco = recebido >= total ? recebido - total : 0;
+                document.getElementById('valorTroco').textContent = `R$ ${troco.toFixed(2)}`;
+            });
+        });
+
+        document.getElementById('btnConfirmarPagamento').addEventListener('click', () => {
+            const forma = document.querySelector('input[name="formaPagamento"]:checked').value;
+            const valor = pedidos[pedidoAtual].total;
+            const dadosPedido = pedidos[pedidoAtual];
+            const horario = new Date().toLocaleString();
+
+            pedidos[pedidoAtual].status = "vendido";
+            pedidos[pedidoAtual].horarioVenda = horario;
+            pedidos[pedidoAtual].formaPagamento = forma;
+
+            const registroVenda = { 
+                id: Date.now(), data: horario, valor, forma, pedido: pedidoAtual,
+                cliente: dadosPedido.cliente, atendente: dadosPedido.atendente, itens: [...dadosPedido.pedidos]
+            };
+
+            vendasDia.push(registroVenda);
+            historicoCompleto.push(registroVenda);
+            totalDia += valor;
+
+            renderizarPedidos();
+            atualizarStatusSalvo(true);
+            
+            document.getElementById('modalPagamento').classList.add('hidden');
+            document.getElementById('areaPedidoDetalhe').classList.add('hidden');
+
+            document.getElementById('modalAvisoSalvar').classList.remove('hidden');
+        });
+
+        // ✅ AQUI ESTÁ A CORREÇÃO PRINCIPAL: ESPERA O BOTÃO FICAR VERMELHO PRIMEIRO
+        document.getElementById('btnSalvarDiretoTela').addEventListener('click', () => {
+            // Espera 150 milissegundos para dar tempo de ver a cor vermelha
+            setTimeout(() => {
+                salvarTudo();
+                document.getElementById('modalAvisoSalvar').classList.add('hidden');
+                alert("✅ Salvo com sucesso! Agora pode navegar.");
+            }, 150); 
+        });
+
+        function atualizarLixeira() {
+            document.getElementById('contadorProdutos').textContent = `${lixeira.produtos.length} ${lixeira.produtos.length === 1 ? 'item' : 'itens'}`;
+            document.getElementById('contadorVendas').textContent = `${lixeira.vendas.length} ${lixeira.vendas.length === 1 ? 'item' : 'itens'}`;
+
+            const elProd = document.getElementById('listaLixeiraProdutos');
+            if(lixeira.produtos.length === 0) elProd.innerHTML = `<p class="text-sm text-gray-400 italic">Vazia</p>`;
+            else {
+                elProd.innerHTML = "";
+                lixeira.produtos.forEach((item, idx) => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 bg-cinzaSuave/40 rounded-lg flex justify-between items-center shadow-sm";
+                    div.innerHTML = `
+                        <div class="flex-1"><p class="font-medium text-sm text-gray-800">${item.nome}</p><p class="text-xs text-gray-500 mt-1">Excluído em: ${item.dataExclusao}</p></div>
+                        <div class="flex items-center gap-3">
+                            <button class="restaurar-produto flex items-center gap-1 bg-success/15 text-success hover:bg-success/25 px-3 py-2 rounded-lg transition-all touch-target"><i class="fa fa-undo"></i><span class="text-xs font-medium">Restaurar</span></button>
+                            <button class="apagar-produto flex items-center gap-1 bg-danger/15 text-danger hover:bg-danger/25 px-3 py-2 rounded-lg transition-all touch-target"><i class="fa fa-trash"></i><span class="text-xs font-medium">Excluir</span></button>
+                        </div>
+                    `;
+                    div.querySelector('.restaurar-produto').addEventListener('click', () => {
+                        if(confirm("✅ Confirmar restauração?")) {
+                            produtos[item.codigo] = {codigo:item.codigo,nome:item.nome,preco:item.preco,categoria:item.categoria};
+                            lixeira.produtos.splice(idx,1); atualizarLixeira(); atualizarStatusSalvo(true); salvarTudo();
+                        }
+                    });
+                    div.querySelector('.apagar-produto').addEventListener('click', () => {
+                        if(confirm("⚠️ Apagar DEFINITIVAMENTE?")) {
+                            lixeira.produtos.splice(idx,1); atualizarLixeira(); atualizarStatusSalvo(true); salvarTudo();
+                        }
+                    });
+                    elProd.appendChild(div);
+                });
+            }
+
+            const elVend = document.getElementById('listaLixeiraVendas');
+            if(lixeira.vendas.length === 0) elVend.innerHTML = `<p class="text-sm text-gray-400 italic">Vazia</p>`;
+            else {
+                elVend.innerHTML = "";
+                lixeira.vendas.forEach((v, idx) => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 bg-cinzaSuave/40 rounded-lg flex justify-between items-center shadow-sm";
+                    div.innerHTML = `
+                        <div class="flex-1"><p class="font-medium text-sm text-gray-800">Pedido Nº ${v.pedido} • R$ ${v.valor.toFixed(2)}</p><p class="text-xs text-gray-500 mt-1">Excluído em: ${v.dataExclusao}</p></div>
+                        <div class="flex items-center gap-3">
+                            <button class="restaurar-venda flex items-center gap-1 bg-success/15 text-success hover:bg-success/25 px-3 py-2 rounded-lg transition-all touch-target"><i class="fa fa-undo"></i><span class="text-xs font-medium">Restaurar</span></button>
+                            <button class="apagar-venda flex items-center gap-1 bg-danger/15 text-danger hover:bg-danger/25 px-3 py-2 rounded-lg transition-all touch-target"><i class="fa fa-trash"></i><span class="text-xs font-medium">Excluir</span></button>
+                        </div>
+                    `;
+                    div.querySelector('.restaurar-venda').addEventListener('click', () => {
+                        if(confirm("✅ Confirmar restauração?")) {
+                            vendasDia.push(v); historicoCompleto.push(v); totalDia += v.valor; lixeira.vendas.splice(idx,1); atualizarLixeira(); atualizarStatusSalvo(true); salvarTudo();
+                        }
+                    });
+                    div.querySelector('.apagar-venda').addEventListener('click', () => {
+                        if(confirm("⚠️ Apagar DEFINITIVAMENTE?")) {
+                            lixeira.vendas.splice(idx,1); atualizarLixeira(); atualizarStatusSalvo(true); salvarTudo();
+                        }
+                    });
+                    elVend.appendChild(div);
+                });
+            }
+        }
+
+        document.querySelectorAll('.fecharModal').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.fixed').classList.add('hidden'));
+        });
+
+        // ✅ AQUI TAMBÉM: SALVAR DO CANTO SUPERIOR
+        document.getElementById('btnSalvar').addEventListener('click', () => {
+            // Espera um pouco para mostrar o vermelho primeiro
+            setTimeout(() => {
+                salvarTudo();
+                alert("✅ Salvo com sucesso!");
+            }, 150);
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            if(houveAlteracao) { e.preventDefault(); e.returnValue = "Existem alterações não salvas!"; }
+        });
+
+        carregarDados();
+    </script>
+</body>
+</html>
